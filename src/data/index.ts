@@ -9,3 +9,12 @@ export {
     mockExercises
 } from "./exercises.data";
 
+export {
+    exerciseDatabase,
+    getAllBodyParts,
+    getExerciseInfoById,
+    getExercisesByBodyPart,
+    getExercisesByDifficulty,
+    searchExercises
+} from "./exercise-database";
+

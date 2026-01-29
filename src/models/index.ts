@@ -5,7 +5,13 @@
 export type {
     Exercise,
     ExerciseCategory,
+    ExerciseInfo,
+    ExerciseMedia,
     ExerciseTiming,
+    Session,
+    SessionExercise,
+    SessionExerciseMode,
+    SessionStatus,
     TimingMode,
     Workout
 } from "./exercise.model";
