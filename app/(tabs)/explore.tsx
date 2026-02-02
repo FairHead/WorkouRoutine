@@ -1,15 +1,12 @@
 import { ExerciseSearchCard } from "@/components/exercise-search-card";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import {
-    exerciseDatabase,
-    getAllBodyParts,
-    searchExercises,
-} from "@/src/data/exercise-database";
+import { useFirebaseExercises } from "@/hooks/use-firebase-exercises";
 import type { ExerciseInfo } from "@/src/models";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback } from "react";
 import {
+    ActivityIndicator,
     FlatList,
     Pressable,
     SafeAreaView,
@@ -26,9 +23,21 @@ export default function ExerciseSearchScreen() {
   const colors = Colors[colorScheme ?? "light"];
   const { width } = useWindowDimensions();
 
-  // State
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
+  // Firebase Hook für Übungen
+  const {
+    filteredExercises,
+    isLoading,
+    error,
+    bodyParts,
+    searchQuery,
+    selectedBodyPart,
+    filteredCount,
+    totalCount,
+    setSearchQuery,
+    setSelectedBodyPart,
+    clearFilters,
+    refresh,
+  } = useFirebaseExercises();
 
   // Responsive Columns
   const numColumns = width >= 1024 ? 4 : width >= 768 ? 3 : 2;
@@ -37,30 +46,6 @@ export default function ExerciseSearchScreen() {
   const availableWidth = width - containerPadding * 2;
   const cardWidth =
     (availableWidth - cardMargin * (numColumns - 1)) / numColumns;
-
-  // Body Parts für Filter
-  const bodyParts = useMemo(() => getAllBodyParts(), []);
-
-  // Gefilterte Übungen
-  const filteredExercises = useMemo(() => {
-    let results = searchQuery
-      ? searchExercises(searchQuery)
-      : [...exerciseDatabase];
-
-    if (selectedBodyPart) {
-      results = results.filter(
-        (ex) => ex.bodyPart.toLowerCase() === selectedBodyPart.toLowerCase(),
-      );
-    }
-
-    return results;
-  }, [searchQuery, selectedBodyPart]);
-
-  // Clear filters
-  const clearFilters = useCallback(() => {
-    setSearchQuery("");
-    setSelectedBodyPart(null);
-  }, []);
 
   // Render Card
   const renderCard = useCallback(
@@ -82,6 +67,47 @@ export default function ExerciseSearchScreen() {
 
   const keyExtractor = useCallback((item: ExerciseInfo) => item.id, []);
 
+  // Loading State
+  if (isLoading) {
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.tint} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Lade Übungen aus der Datenbank...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <View style={styles.errorContainer}>
+          <Ionicons name="cloud-offline" size={64} color={colors.textSecondary} />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>
+            Verbindungsfehler
+          </Text>
+          <Text style={[styles.errorSubtitle, { color: colors.textSecondary }]}>
+            {error}
+          </Text>
+          <Pressable
+            style={[styles.retryButton, { backgroundColor: colors.tint }]}
+            onPress={refresh}
+          >
+            <Text style={styles.retryButtonText}>Erneut versuchen</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -92,7 +118,7 @@ export default function ExerciseSearchScreen() {
           Übungen finden
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          {filteredExercises.length} Übungen verfügbar
+          {filteredCount} von {totalCount} Übungen
         </Text>
       </View>
 
@@ -321,6 +347,46 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   clearButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: Fonts.rounded,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: Fonts.rounded,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginTop: 16,
+    fontFamily: Fonts.rounded,
+  },
+  errorSubtitle: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: "center",
+    fontFamily: Fonts.rounded,
+  },
+  retryButton: {
+    marginTop: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  retryButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",

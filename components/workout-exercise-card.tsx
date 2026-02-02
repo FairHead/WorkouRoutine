@@ -148,14 +148,13 @@ export function WorkoutExerciseCard({
 
           {/* Progress */}
           <View style={styles.progressInfo}>
-            <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.progressText, { color: colors.textSecondary }]}
+            >
               {completedSets}/{totalSets} Sätze
             </Text>
             <View
-              style={[
-                styles.progressBarBg,
-                { backgroundColor: colors.border },
-              ]}
+              style={[styles.progressBarBg, { backgroundColor: colors.border }]}
             >
               <Animated.View
                 style={[
@@ -213,11 +212,18 @@ export function WorkoutExerciseCard({
 
         {/* Rest Overlay */}
         {isResting && (
-          <View style={[styles.restOverlay, { backgroundColor: "rgba(0,0,0,0.7)" }]}>
+          <View
+            style={[styles.restOverlay, { backgroundColor: "rgba(0,0,0,0.7)" }]}
+          >
             <Text style={styles.restLabel}>Pause</Text>
-            <Text style={styles.restTimer}>{formatTime(restTimeRemaining)}</Text>
+            <Text style={styles.restTimer}>
+              {formatTime(restTimeRemaining)}
+            </Text>
             <Pressable
-              style={[styles.skipRestButton, { backgroundColor: colors.accent }]}
+              style={[
+                styles.skipRestButton,
+                { backgroundColor: colors.accent },
+              ]}
               onPress={onSkipRest}
             >
               <Ionicons name="play-skip-forward" size={20} color="#fff" />
@@ -245,7 +251,9 @@ export function WorkoutExerciseCard({
             <Text style={[styles.currentSetNumber, { color: colors.accent }]}>
               {currentSet + 1}
             </Text>
-            <Text style={[styles.totalSetsNumber, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.totalSetsNumber, { color: colors.textSecondary }]}
+            >
               / {totalSets}
             </Text>
           </View>
@@ -259,7 +267,9 @@ export function WorkoutExerciseCard({
               <Text style={[styles.targetValue, { color: colors.text }]}>
                 {formatTime(exercise.duration)}
               </Text>
-              <Text style={[styles.targetLabel, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.targetLabel, { color: colors.textSecondary }]}
+              >
                 pro Satz
               </Text>
             </>
@@ -269,7 +279,9 @@ export function WorkoutExerciseCard({
               <Text style={[styles.targetValue, { color: colors.text }]}>
                 {exercise.reps}
               </Text>
-              <Text style={[styles.targetLabel, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.targetLabel, { color: colors.textSecondary }]}
+              >
                 Wiederholungen
               </Text>
             </>
@@ -302,7 +314,10 @@ export function WorkoutExerciseCard({
         {!isResting && (
           <View style={styles.actionButtons}>
             <Pressable
-              style={[styles.completeButton, { backgroundColor: colors.accent }]}
+              style={[
+                styles.completeButton,
+                { backgroundColor: colors.accent },
+              ]}
               onPress={onSetComplete}
             >
               <Ionicons name="checkmark" size={28} color="#fff" />
@@ -315,7 +330,11 @@ export function WorkoutExerciseCard({
               style={[styles.skipButton, { borderColor: colors.border }]}
               onPress={onSkipExercise}
             >
-              <Ionicons name="play-skip-forward" size={20} color={colors.textSecondary} />
+              <Ionicons
+                name="play-skip-forward"
+                size={20}
+                color={colors.textSecondary}
+              />
             </Pressable>
           </View>
         )}

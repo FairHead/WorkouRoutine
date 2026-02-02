@@ -1,13 +1,13 @@
 import { AddToSessionModal } from "@/components/add-to-session-modal";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { getExerciseInfoById } from "@/src/data/exercise-database";
+import { getExerciseByIdFromFirebase } from "@/src/services/firebase.service";
 import type { ExerciseInfo } from "@/src/models";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,15 +16,32 @@ export default function ExerciseDetailScreen() {
 
   // Exercise data
   const [exercise, setExercise] = useState<ExerciseInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showGif, setShowGif] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load exercise
+  // Load exercise from Firebase
   useEffect(() => {
     if (id) {
-      const ex = getExerciseInfoById(id);
-      setExercise(ex ?? null);
+      setIsLoading(true);
+      setError(null);
+      
+      getExerciseByIdFromFirebase(id)
+        .then((ex) => {
+          setExercise(ex);
+          if (!ex) {
+            setError("Übung nicht gefunden");
+          }
+        })
+        .catch((err) => {
+          console.error("Error loading exercise:", err);
+          setError("Fehler beim Laden der Übung");
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
   }, [id]);
 
@@ -73,7 +90,8 @@ export default function ExerciseDetailScreen() {
     }
   };
 
-  if (!exercise) {
+  // Loading State
+  if (isLoading) {
     return (
       <View
         style={[
@@ -82,8 +100,27 @@ export default function ExerciseDetailScreen() {
         ]}
       >
         <Stack.Screen options={{ title: "Laden..." }} />
+        <ActivityIndicator size="large" color={colors.tint} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
           Übung wird geladen...
+        </Text>
+      </View>
+    );
+  }
+
+  // Error State
+  if (error || !exercise) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <Stack.Screen options={{ title: "Fehler" }} />
+        <Ionicons name="alert-circle" size={48} color={colors.textSecondary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          {error || "Übung nicht gefunden"}
         </Text>
       </View>
     );
@@ -104,22 +141,47 @@ export default function ExerciseDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Image */}
+        {/* Hero Images - Start & End Position nebeneinander */}
         <Pressable
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           style={styles.imageContainer}
         >
-          <Image
-            source={
-              showGif && exercise.gifUrl
-                ? { uri: exercise.gifUrl }
-                : exercise.image
-            }
-            style={styles.heroImage}
-            contentFit="cover"
-            transition={200}
-          />
+          <View style={styles.imagesRow}>
+            {/* Erstes Bild (Startposition) */}
+            <View style={styles.imageWrapper}>
+              <Image
+                source={
+                  showGif && exercise.gifUrl
+                    ? { uri: exercise.gifUrl }
+                    : exercise.image
+                }
+                style={styles.heroImage}
+                contentFit="cover"
+                transition={200}
+              />
+              <View style={styles.imageLabel}>
+                <Text style={styles.imageLabelText}>Start</Text>
+              </View>
+            </View>
+
+            {/* Zweites Bild (Endposition) */}
+            <View style={styles.imageWrapper}>
+              <Image
+                source={
+                  exercise.imageUrl2
+                    ? { uri: exercise.imageUrl2 }
+                    : exercise.image
+                }
+                style={styles.heroImage}
+                contentFit="cover"
+                transition={200}
+              />
+              <View style={styles.imageLabel}>
+                <Text style={styles.imageLabelText}>Ende</Text>
+              </View>
+            </View>
+          </View>
 
           {/* GIF Hint */}
           {exercise.gifUrl && (
@@ -396,12 +458,35 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: "100%",
-    aspectRatio: 1.5,
+    aspectRatio: 2,
+    position: "relative",
+  },
+  imagesRow: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  imageWrapper: {
+    flex: 1,
     position: "relative",
   },
   heroImage: {
     width: "100%",
     height: "100%",
+  },
+  imageLabel: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  imageLabelText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "600",
+    fontFamily: Fonts.rounded,
   },
   gifHint: {
     position: "absolute",

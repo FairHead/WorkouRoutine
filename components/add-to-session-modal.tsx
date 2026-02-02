@@ -33,7 +33,7 @@ export function AddToSessionModal({
 }: AddToSessionModalProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const { sessions, createSession, addExerciseToSession, setActiveSession } =
+  const { sessions, createSession, addExerciseToSession, setActiveSession, activeSessionId } =
     useSessionStore();
 
   // State
@@ -46,6 +46,17 @@ export function AddToSessionModal({
 
   // Filter nur geplante Sessions
   const plannedSessions = sessions.filter((s) => s.status === "planned");
+
+  // Automatisch aktive Session vorauswählen wenn Modal öffnet
+  React.useEffect(() => {
+    if (visible && activeSessionId) {
+      // Prüfe ob die aktive Session noch in den geplanten Sessions ist
+      const activeSessionExists = plannedSessions.some(s => s.id === activeSessionId);
+      if (activeSessionExists) {
+        setSelectedSessionId(activeSessionId);
+      }
+    }
+  }, [visible, activeSessionId, plannedSessions]);
 
   // Reset State
   const resetState = useCallback(() => {

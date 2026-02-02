@@ -20,6 +20,7 @@ Dieses Projekt und alle Teilnehmer sind dem [Contributor Covenant](https://www.c
 ### 🐛 Bugs melden
 
 Wenn du einen Bug findest, erstelle bitte ein Issue mit:
+
 - **Titel**: Kurze, beschreibende Zusammenfassung
 - **Beschreibung**: Was passiert vs. was erwartet wird
 - **Schritte zur Reproduktion**: Wie kann der Bug reproduziert werden
@@ -29,6 +30,7 @@ Wenn du einen Bug findest, erstelle bitte ein Issue mit:
 ### 💡 Feature Requests
 
 Hast du eine Idee für ein neues Feature?
+
 1. Prüfe zuerst, ob ein ähnliches Issue bereits existiert
 2. Erstelle ein Issue mit dem Label `enhancement`
 3. Beschreibe das Feature und seinen Nutzen
@@ -37,6 +39,7 @@ Hast du eine Idee für ein neues Feature?
 ### 📝 Dokumentation
 
 Verbesserungen an der Dokumentation sind immer willkommen:
+
 - Tippfehler korrigieren
 - Beispiele hinzufügen
 - Übersetzungen
@@ -114,7 +117,7 @@ export function SessionCard({ session, onPress }: SessionCardProps) {
   const handlePress = useCallback(() => {
     onPress(session.id);
   }, [session.id, onPress]);
-  
+
   return <Pressable onPress={handlePress}>...</Pressable>;
 }
 ```
@@ -135,7 +138,7 @@ const styles = StyleSheet.create({
 });
 
 // In der Komponente
-const colors = Colors[colorScheme ?? 'light'];
+const colors = Colors[colorScheme ?? "light"];
 ```
 
 ### Dateistruktur
@@ -159,16 +162,16 @@ Wir verwenden [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Types
 
-| Type | Beschreibung |
-|------|-------------|
-| `feat` | Neues Feature |
-| `fix` | Bugfix |
-| `docs` | Dokumentation |
-| `style` | Formatierung (kein Code-Change) |
-| `refactor` | Code-Refactoring |
-| `perf` | Performance-Verbesserungen |
-| `test` | Tests hinzufügen/ändern |
-| `chore` | Build-Prozess, Dependencies |
+| Type       | Beschreibung                    |
+| ---------- | ------------------------------- |
+| `feat`     | Neues Feature                   |
+| `fix`      | Bugfix                          |
+| `docs`     | Dokumentation                   |
+| `style`    | Formatierung (kein Code-Change) |
+| `refactor` | Code-Refactoring                |
+| `perf`     | Performance-Verbesserungen      |
+| `test`     | Tests hinzufügen/ändern         |
+| `chore`    | Build-Prozess, Dependencies     |
 
 ### Beispiele
 
@@ -195,7 +198,7 @@ git commit -m "docs: update installation instructions"
 ### PR erstellen
 
 1. **Titel**: Beschreibend, folgt Conventional Commits
-2. **Beschreibung**: 
+2. **Beschreibung**:
    - Was wurde geändert?
    - Warum wurde es geändert?
    - Wie kann man es testen?
@@ -218,15 +221,15 @@ git commit -m "docs: update installation instructions"
 
 ## 🏷️ Labels
 
-| Label | Beschreibung |
-|-------|-------------|
-| `bug` | Etwas funktioniert nicht |
-| `enhancement` | Neues Feature oder Verbesserung |
-| `documentation` | Dokumentation |
-| `good first issue` | Gut für Einsteiger |
-| `help wanted` | Hilfe benötigt |
-| `priority: high` | Hohe Priorität |
-| `wip` | Work in Progress |
+| Label              | Beschreibung                    |
+| ------------------ | ------------------------------- |
+| `bug`              | Etwas funktioniert nicht        |
+| `enhancement`      | Neues Feature oder Verbesserung |
+| `documentation`    | Dokumentation                   |
+| `good first issue` | Gut für Einsteiger              |
+| `help wanted`      | Hilfe benötigt                  |
+| `priority: high`   | Hohe Priorität                  |
+| `wip`              | Work in Progress                |
 
 ## ❓ Fragen?
 

@@ -40,8 +40,10 @@ export interface ExerciseInfo {
   exerciseDbId?: string;
   /** Name der Übung */
   name: string;
-  /** Bild der Übung */
+  /** Bild der Übung (Startposition) */
   image: ImageSourcePropType;
+  /** Zweites Bild der Übung (Endposition) - von Firebase */
+  imageUrl2?: string;
   /** GIF URL für Animation */
   gifUrl?: string;
   /** Körperteil (z.B. "chest", "back") */

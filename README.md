@@ -10,23 +10,27 @@ Eine moderne React Native Workout-App mit 3D-Karussell, Drag & Drop Sortierung u
 ## ✨ Features
 
 ### 🏋️ Workout Sessions
+
 - **Session erstellen & verwalten** - Erstelle individuelle Trainingseinheiten
 - **Übungen hinzufügen** - Wähle aus einer umfangreichen Übungsdatenbank
 - **Drag & Drop Sortierung** - Ordne Übungen per Ziehen und Ablegen neu an
 - **Workout-Tracking** - Verfolge Sets, Wiederholungen und Pausenzeiten
 
 ### 🎠 3D-Karussell
+
 - **Perspektivisches Design** - Übungen werden in einem beeindruckenden 3D-Karussell dargestellt
 - **Flüssige Animationen** - Smooth Swipe-Gesten mit Spring-Animationen
 - **Aktiver Workout-Modus** - Karussell funktioniert auch während des Trainings
 
 ### ⏱️ Timer & Tracking
+
 - **Workout-Timer** - Gesamtdauer des Trainings
 - **Set-Timer** - Timer für zeitbasierte Übungen
 - **Pausenzeiten** - Automatische Countdown-Timer zwischen Sets
 - **Fortschrittsanzeige** - Visuelles Feedback zum aktuellen Set
 
 ### 🎨 UI/UX
+
 - **Dark & Light Mode** - Automatische Anpassung an System-Einstellungen
 - **Modernes Design** - Klares, benutzerfreundliches Interface
 - **Haptic Feedback** - Haptische Rückmeldung bei Interaktionen
@@ -44,17 +48,20 @@ Eine moderne React Native Workout-App mit 3D-Karussell, Drag & Drop Sortierung u
 ### Schritte
 
 1. **Repository klonen**
+
    ```bash
    git clone https://github.com/yourusername/WorkoutRoutine.git
    cd WorkoutRoutine
    ```
 
 2. **Abhängigkeiten installieren**
+
    ```bash
    npm install
    ```
 
 3. **App starten**
+
    ```bash
    npx expo start
    ```
@@ -67,12 +74,14 @@ Eine moderne React Native Workout-App mit 3D-Karussell, Drag & Drop Sortierung u
 ## 📱 Verwendung
 
 ### Session erstellen
+
 1. Tippe auf "Neue Session" auf der Startseite
 2. Gib einen Namen und optional eine Beschreibung ein
 3. Füge Übungen aus der Datenbank hinzu
 4. Konfiguriere Sets, Wiederholungen und Gewichte
 
 ### Workout starten
+
 1. Wähle eine Session aus
 2. Tippe auf "Workout starten"
 3. Navigiere durch die Übungen im 3D-Karussell
@@ -80,20 +89,21 @@ Eine moderne React Native Workout-App mit 3D-Karussell, Drag & Drop Sortierung u
 5. Beende das Workout wenn du fertig bist
 
 ### Übungen sortieren
+
 - Halte eine Übung gedrückt, um den Drag-Modus zu aktivieren
 - Ziehe die Übung an die gewünschte Position
 - Lasse los, um die neue Reihenfolge zu speichern
 
 ## 🛠️ Technologie-Stack
 
-| Technologie | Version | Beschreibung |
-|-------------|---------|--------------|
-| React Native | 0.81.5 | Cross-Platform Framework |
-| Expo | 54.0 | Development Platform |
-| TypeScript | 5.9.2 | Typ-sichere Entwicklung |
-| Expo Router | 6.0 | File-based Navigation |
-| Reanimated | 4.1.1 | Smooth Animations |
-| Gesture Handler | 2.28.0 | Touch-Gesten |
+| Technologie     | Version | Beschreibung             |
+| --------------- | ------- | ------------------------ |
+| React Native    | 0.81.5  | Cross-Platform Framework |
+| Expo            | 54.0    | Development Platform     |
+| TypeScript      | 5.9.2   | Typ-sichere Entwicklung  |
+| Expo Router     | 6.0     | File-based Navigation    |
+| Reanimated      | 4.1.1   | Smooth Animations        |
+| Gesture Handler | 2.28.0  | Touch-Gesten             |
 
 ## 📁 Projektstruktur
 

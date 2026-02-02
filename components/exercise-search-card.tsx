@@ -118,25 +118,35 @@ export function ExerciseSearchCard({
         onPressOut={handlePressOut}
         style={styles.pressable}
       >
-        {/* Bild */}
+        {/* Bilder - Start & End Position nebeneinander */}
         <View style={styles.imageContainer}>
-          <Image
-            source={
-              showGif && exercise.gifUrl
-                ? { uri: exercise.gifUrl }
-                : exercise.image
-            }
-            style={styles.image}
-            contentFit="cover"
-            transition={200}
-          />
+          {/* Erstes Bild (Startposition) */}
+          <View style={styles.imageWrapper}>
+            <Image
+              source={
+                showGif && exercise.gifUrl
+                  ? { uri: exercise.gifUrl }
+                  : exercise.image
+              }
+              style={styles.image}
+              contentFit="cover"
+              transition={200}
+            />
+          </View>
 
-          {/* GIF Badge */}
-          {exercise.gifUrl && !showGif && (
-            <View style={styles.gifBadge}>
-              <Text style={styles.gifBadgeText}>GIF</Text>
-            </View>
-          )}
+          {/* Zweites Bild (Endposition) - falls vorhanden */}
+          <View style={styles.imageWrapper}>
+            <Image
+              source={
+                exercise.imageUrl2
+                  ? { uri: exercise.imageUrl2 }
+                  : exercise.image
+              }
+              style={styles.image}
+              contentFit="cover"
+              transition={200}
+            />
+          </View>
 
           {/* Difficulty Badge */}
           <View
@@ -209,26 +219,17 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: "100%",
-    aspectRatio: 1.2,
+    aspectRatio: 2,
+    flexDirection: "row",
     position: "relative",
+  },
+  imageWrapper: {
+    flex: 1,
+    overflow: "hidden",
   },
   image: {
     width: "100%",
     height: "100%",
-  },
-  gifBadge: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  gifBadgeText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "600",
   },
   difficultyBadge: {
     position: "absolute",

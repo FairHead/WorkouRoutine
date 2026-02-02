@@ -39,6 +39,7 @@ export default function SessionDetailScreen() {
     startWorkout,
     completeWorkout,
     cancelWorkout,
+    setActiveSession,
   } = useSessionStore();
 
   const session = getSession(id ?? "");
@@ -53,7 +54,9 @@ export default function SessionDetailScreen() {
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
-  const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
+  const [completedSets, setCompletedSets] = useState<Record<string, number>>(
+    {},
+  );
   const [isResting, setIsResting] = useState(false);
   const [restTimeRemaining, setRestTimeRemaining] = useState(0);
   const [exerciseTimeRemaining, setExerciseTimeRemaining] = useState(0);
@@ -75,12 +78,12 @@ export default function SessionDetailScreen() {
     if (restTimerRef.current) clearInterval(restTimerRef.current);
     if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
-    
+
     // Workout als abgeschlossen markieren im Store
     if (session) {
       completeWorkout(session.id);
     }
-    
+
     Vibration.vibrate([0, 500, 200, 500]);
     Alert.alert(
       "Workout beendet! 🎉",
@@ -136,7 +139,13 @@ export default function SessionDetailScreen() {
       setRestTimeRemaining(restTime);
       setIsResting(true);
     }
-  }, [session, currentExerciseIndex, currentSetIndex, completedSets, handleFinishWorkout]);
+  }, [
+    session,
+    currentExerciseIndex,
+    currentSetIndex,
+    completedSets,
+    handleFinishWorkout,
+  ]);
 
   const handleSkipRest = useCallback(() => {
     if (restTimerRef.current) clearInterval(restTimerRef.current);
@@ -162,26 +171,29 @@ export default function SessionDetailScreen() {
   }, [session, currentExerciseIndex, handleFinishWorkout]);
 
   // Wähle eine bestimmte Übung im Workout aus (durch Karussell-Navigation)
-  const handleSelectExercise = useCallback((index: number) => {
-    if (!session || index === currentExerciseIndex) return;
-    
-    // Timer stoppen
-    if (restTimerRef.current) clearInterval(restTimerRef.current);
-    if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
-    
-    const selectedExercise = session.exercises[index];
-    if (selectedExercise?.mode === "timer" && selectedExercise.duration) {
-      setExerciseTimeRemaining(selectedExercise.duration);
-    }
-    
-    // Aktuellen Set-Index basierend auf bereits abgeschlossenen Sets setzen
-    const alreadyCompleted = completedSets[selectedExercise.id] || 0;
-    const remainingSets = selectedExercise.sets - alreadyCompleted;
-    
-    setCurrentExerciseIndex(index);
-    setCurrentSetIndex(remainingSets > 0 ? alreadyCompleted : 0);
-    setIsResting(false);
-  }, [session, currentExerciseIndex, completedSets]);
+  const handleSelectExercise = useCallback(
+    (index: number) => {
+      if (!session || index === currentExerciseIndex) return;
+
+      // Timer stoppen
+      if (restTimerRef.current) clearInterval(restTimerRef.current);
+      if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
+
+      const selectedExercise = session.exercises[index];
+      if (selectedExercise?.mode === "timer" && selectedExercise.duration) {
+        setExerciseTimeRemaining(selectedExercise.duration);
+      }
+
+      // Aktuellen Set-Index basierend auf bereits abgeschlossenen Sets setzen
+      const alreadyCompleted = completedSets[selectedExercise.id] || 0;
+      const remainingSets = selectedExercise.sets - alreadyCompleted;
+
+      setCurrentExerciseIndex(index);
+      setCurrentSetIndex(remainingSets > 0 ? alreadyCompleted : 0);
+      setIsResting(false);
+    },
+    [session, currentExerciseIndex, completedSets],
+  );
 
   const handleCancelWorkout = useCallback(() => {
     Alert.alert(
@@ -195,7 +207,8 @@ export default function SessionDetailScreen() {
           onPress: () => {
             setIsWorkoutActive(false);
             if (restTimerRef.current) clearInterval(restTimerRef.current);
-            if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
+            if (exerciseTimerRef.current)
+              clearInterval(exerciseTimerRef.current);
             if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
             // Workout als abgebrochen markieren - Status zurück auf "planned"
             if (session) {
@@ -262,7 +275,15 @@ export default function SessionDetailScreen() {
     return () => {
       if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     };
-  }, [isWorkoutActive, isPaused, isResting, currentExerciseIndex, exerciseTimeRemaining, session?.exercises, handleSetComplete]);
+  }, [
+    isWorkoutActive,
+    isPaused,
+    isResting,
+    currentExerciseIndex,
+    exerciseTimeRemaining,
+    session?.exercises,
+    handleSetComplete,
+  ]);
 
   if (!session) {
     return (
@@ -347,7 +368,7 @@ export default function SessionDetailScreen() {
     setIsResting(false);
     setIsPaused(false);
     setWorkoutDuration(0);
-    
+
     // Timer für erste Übung initialisieren
     const firstExercise = session.exercises[0];
     if (firstExercise?.mode === "timer" && firstExercise.duration) {
@@ -472,7 +493,9 @@ export default function SessionDetailScreen() {
         <View style={styles.exercisesSection}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {isWorkoutActive ? `Workout - ${formatTime(workoutDuration)}` : "Übungen"}
+              {isWorkoutActive
+                ? `Workout - ${formatTime(workoutDuration)}`
+                : "Übungen"}
             </Text>
             {!isWorkoutActive && session.exercises.length > 1 && (
               <Pressable
@@ -503,7 +526,14 @@ export default function SessionDetailScreen() {
             )}
             {isWorkoutActive && (
               <Pressable
-                style={[styles.pauseButton, { backgroundColor: isPaused ? colors.accent : colors.cardBackground }]}
+                style={[
+                  styles.pauseButton,
+                  {
+                    backgroundColor: isPaused
+                      ? colors.accent
+                      : colors.cardBackground,
+                  },
+                ]}
                 onPress={() => setIsPaused(!isPaused)}
               >
                 <Ionicons
@@ -532,7 +562,10 @@ export default function SessionDetailScreen() {
                   styles.addExerciseButton,
                   { backgroundColor: colors.accent },
                 ]}
-                onPress={() => router.push("/(tabs)/explore")}
+                onPress={() => {
+                  setActiveSession(session.id);
+                  router.push("/(tabs)/explore");
+                }}
               >
                 <Ionicons name="search" size={18} color="#fff" />
                 <Text style={styles.addExerciseText}>Übungen suchen</Text>
@@ -549,7 +582,7 @@ export default function SessionDetailScreen() {
             />
           ) : isWorkoutActive ? (
             /* Workout Mode - mit Workout Cards */
-            <Carousel3D 
+            <Carousel3D
               initialIndex={currentExerciseIndex}
               activeIndex={currentExerciseIndex}
               onIndexChange={handleSelectExercise}
@@ -561,7 +594,9 @@ export default function SessionDetailScreen() {
                   index={index}
                   isActive={index === currentExerciseIndex}
                   completedSets={completedSets[sessionExercise.id] || 0}
-                  currentSet={index === currentExerciseIndex ? currentSetIndex : 0}
+                  currentSet={
+                    index === currentExerciseIndex ? currentSetIndex : 0
+                  }
                   isResting={index === currentExerciseIndex && isResting}
                   restTimeRemaining={restTimeRemaining}
                   exerciseTimeRemaining={exerciseTimeRemaining}
@@ -597,7 +632,10 @@ export default function SessionDetailScreen() {
         {session.exercises.length > 0 && !isWorkoutActive && (
           <Pressable
             style={[styles.addMoreButton, { borderColor: colors.accent }]}
-            onPress={() => router.push("/(tabs)/explore")}
+            onPress={() => {
+              setActiveSession(session.id);
+              router.push("/(tabs)/explore");
+            }}
           >
             <Ionicons name="add" size={20} color={colors.accent} />
             <Text style={[styles.addMoreText, { color: colors.accent }]}>

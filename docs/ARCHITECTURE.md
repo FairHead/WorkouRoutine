@@ -135,11 +135,11 @@ interface SessionStore {
 ### Verwendung
 
 ```typescript
-import { useSessionStore } from '@/hooks/use-session-store';
+import { useSessionStore } from "@/hooks/use-session-store";
 
 function MyComponent() {
   const { sessions, createSession, startWorkout } = useSessionStore();
-  
+
   // ...
 }
 ```
@@ -153,24 +153,24 @@ Das Farbsystem ist in `constants/theme.ts` definiert:
 ```typescript
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: '#5c77ba',      // Akzentfarbe
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: '#5c77ba',
-    cardBackground: '#f8f9fa',
-    border: '#e1e1e1',
+    text: "#11181C",
+    background: "#fff",
+    tint: "#5c77ba", // Akzentfarbe
+    icon: "#687076",
+    tabIconDefault: "#687076",
+    tabIconSelected: "#5c77ba",
+    cardBackground: "#f8f9fa",
+    border: "#e1e1e1",
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: '#5c77ba',      // Gleiche Akzentfarbe
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: '#5c77ba',
-    cardBackground: '#1e2022',
-    border: '#2d2d2d',
+    text: "#ECEDEE",
+    background: "#151718",
+    tint: "#5c77ba", // Gleiche Akzentfarbe
+    icon: "#9BA1A6",
+    tabIconDefault: "#9BA1A6",
+    tabIconSelected: "#5c77ba",
+    cardBackground: "#1e2022",
+    border: "#2d2d2d",
   },
 };
 ```
@@ -184,7 +184,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 function MyComponent() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  
+
   return (
     <View style={{ backgroundColor: colors.background }}>
       <Text style={{ color: colors.text }}>Hello</Text>
@@ -200,19 +200,19 @@ function MyComponent() {
 Die App nutzt `react-native-reanimated` für performante Animationen:
 
 ```typescript
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring
 } from 'react-native-reanimated';
 
 function AnimatedComponent() {
   const scale = useSharedValue(1);
-  
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
-  
+
   return <Animated.View style={animatedStyle} />;
 }
 ```
@@ -229,7 +229,7 @@ function DraggableItem() {
     .onUpdate((e) => {
       translateY.value = e.translationY;
     });
-    
+
   return (
     <GestureDetector gesture={dragGesture}>
       <Animated.View />
@@ -269,7 +269,7 @@ interface ExerciseInfo {
   equipment: string;
   instructions: string[];
   caloriesPerMinute: number;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: "beginner" | "intermediate" | "advanced";
   category: ExerciseCategory;
 }
 ```
@@ -282,7 +282,7 @@ interface Session {
   name: string;
   description?: string;
   exercises: SessionExercise[];
-  status: SessionStatus;  // 'planned' | 'in_progress' | 'completed'
+  status: SessionStatus; // 'planned' | 'in_progress' | 'completed'
   createdAt: Date;
   updatedAt: Date;
 }
@@ -294,10 +294,10 @@ interface Session {
 interface SessionExercise {
   id: string;
   exerciseInfo: ExerciseInfo;
-  mode: 'reps' | 'timer';
+  mode: "reps" | "timer";
   sets: number;
   reps: number;
-  duration: number;  // Sekunden
+  duration: number; // Sekunden
   weight: number;
   restBetweenSets: number;
   restAfterExercise: number;
@@ -312,20 +312,20 @@ interface SessionExercise {
 Die Navigation erfolgt über Expo Router mit typed routes:
 
 ```typescript
-import { router } from 'expo-router';
+import { router } from "expo-router";
 
 // Navigation
-router.push('/session/123');
+router.push("/session/123");
 router.push({
-  pathname: '/workout/[id]',
-  params: { id: '123' },
+  pathname: "/workout/[id]",
+  params: { id: "123" },
 });
 
 // Zurück
 router.back();
 
 // Replace
-router.replace('/');
+router.replace("/");
 ```
 
 ### Tab Navigation

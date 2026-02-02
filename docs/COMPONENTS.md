@@ -22,22 +22,22 @@ Ein 3D-Karussell mit perspektivischer Darstellung und Swipe-Gesten.
 ### Import
 
 ```typescript
-import { Carousel3D } from '@/components/carousel-3d';
+import { Carousel3D } from "@/components/carousel-3d";
 ```
 
 ### Props
 
-| Prop | Type | Default | Beschreibung |
-|------|------|---------|--------------|
-| `children` | `ReactNode[]` | (required) | Die Karten-Elemente |
-| `initialIndex` | `number` | `0` | Startindex |
-| `activeIndex` | `number` | - | Kontrollierter Index (optional) |
-| `onIndexChange` | `(index: number) => void` | - | Callback bei Index-Änderung |
+| Prop            | Type                      | Default    | Beschreibung                    |
+| --------------- | ------------------------- | ---------- | ------------------------------- |
+| `children`      | `ReactNode[]`             | (required) | Die Karten-Elemente             |
+| `initialIndex`  | `number`                  | `0`        | Startindex                      |
+| `activeIndex`   | `number`                  | -          | Kontrollierter Index (optional) |
+| `onIndexChange` | `(index: number) => void` | -          | Callback bei Index-Änderung     |
 
 ### Beispiel
 
 ```tsx
-<Carousel3D 
+<Carousel3D
   initialIndex={0}
   activeIndex={currentExercise}
   onIndexChange={(index) => setCurrentExercise(index)}
@@ -72,19 +72,19 @@ Eine sortierbare Liste mit Drag & Drop Funktionalität.
 ### Import
 
 ```typescript
-import { DraggableList } from '@/components/draggable-list';
+import { DraggableList } from "@/components/draggable-list";
 ```
 
 ### Props
 
-| Prop | Type | Default | Beschreibung |
-|------|------|---------|--------------|
-| `data` | `T[]` | (required) | Die Listendaten |
-| `keyExtractor` | `(item: T) => string` | (required) | Key-Funktion |
-| `renderItem` | `(props: RenderItemProps<T>) => ReactNode` | (required) | Render-Funktion |
-| `onReorder` | `(newData: T[]) => void` | (required) | Callback nach Sortierung |
-| `itemHeight` | `number` | `80` | Höhe eines Elements |
-| `activationDelay` | `number` | `200` | Long-Press Verzögerung (ms) |
+| Prop              | Type                                       | Default    | Beschreibung                |
+| ----------------- | ------------------------------------------ | ---------- | --------------------------- |
+| `data`            | `T[]`                                      | (required) | Die Listendaten             |
+| `keyExtractor`    | `(item: T) => string`                      | (required) | Key-Funktion                |
+| `renderItem`      | `(props: RenderItemProps<T>) => ReactNode` | (required) | Render-Funktion             |
+| `onReorder`       | `(newData: T[]) => void`                   | (required) | Callback nach Sortierung    |
+| `itemHeight`      | `number`                                   | `80`       | Höhe eines Elements         |
+| `activationDelay` | `number`                                   | `200`      | Long-Press Verzögerung (ms) |
 
 ### RenderItemProps
 
@@ -93,7 +93,7 @@ interface RenderItemProps<T> {
   item: T;
   index: number;
   isDragging: boolean;
-  dragHandleProps: object;  // Auf den Drag-Handle anwenden
+  dragHandleProps: object; // Auf den Drag-Handle anwenden
 }
 ```
 
@@ -104,7 +104,10 @@ interface RenderItemProps<T> {
   data={exercises}
   keyExtractor={(ex) => ex.id}
   onReorder={(newExercises) => {
-    reorderExercises(sessionId, newExercises.map(e => e.id));
+    reorderExercises(
+      sessionId,
+      newExercises.map((e) => e.id),
+    );
   }}
   renderItem={({ item, isDragging, dragHandleProps }) => (
     <View style={[styles.item, isDragging && styles.dragging]}>
@@ -134,16 +137,16 @@ Zeigt eine Session-Vorschau auf der Startseite.
 ### Import
 
 ```typescript
-import { SessionCard } from '@/components/session-card';
+import { SessionCard } from "@/components/session-card";
 ```
 
 ### Props
 
-| Prop | Type | Default | Beschreibung |
-|------|------|---------|--------------|
-| `session` | `Session` | (required) | Session-Daten |
-| `onPress` | `() => void` | - | Klick-Handler |
-| `onLongPress` | `() => void` | - | Long-Press Handler |
+| Prop          | Type         | Default    | Beschreibung       |
+| ------------- | ------------ | ---------- | ------------------ |
+| `session`     | `Session`    | (required) | Session-Daten      |
+| `onPress`     | `() => void` | -          | Klick-Handler      |
+| `onLongPress` | `() => void` | -          | Long-Press Handler |
 
 ### Beispiel
 
@@ -172,17 +175,17 @@ Zeigt eine Übung innerhalb einer Session-Detailansicht.
 ### Import
 
 ```typescript
-import { SessionExerciseCard } from '@/components/session-exercise-card';
+import { SessionExerciseCard } from "@/components/session-exercise-card";
 ```
 
 ### Props
 
-| Prop | Type | Default | Beschreibung |
-|------|------|---------|--------------|
-| `exercise` | `SessionExercise` | (required) | Übungsdaten |
-| `onPress` | `() => void` | - | Klick-Handler |
-| `onEdit` | `() => void` | - | Bearbeiten-Handler |
-| `onDelete` | `() => void` | - | Löschen-Handler |
+| Prop       | Type              | Default    | Beschreibung       |
+| ---------- | ----------------- | ---------- | ------------------ |
+| `exercise` | `SessionExercise` | (required) | Übungsdaten        |
+| `onPress`  | `() => void`      | -          | Klick-Handler      |
+| `onEdit`   | `() => void`      | -          | Bearbeiten-Handler |
+| `onDelete` | `() => void`      | -          | Löschen-Handler    |
 
 ### Darstellung
 
@@ -202,21 +205,21 @@ Spezialisierte Karte für den aktiven Workout-Modus.
 ### Import
 
 ```typescript
-import { WorkoutExerciseCard } from '@/components/workout-exercise-card';
+import { WorkoutExerciseCard } from "@/components/workout-exercise-card";
 ```
 
 ### Props
 
-| Prop | Type | Default | Beschreibung |
-|------|------|---------|--------------|
-| `exercise` | `SessionExercise` | (required) | Übungsdaten |
-| `isActive` | `boolean` | `false` | Ob die Übung gerade aktiv ist |
-| `completedSets` | `number` | `0` | Anzahl abgeschlossener Sets |
-| `isResting` | `boolean` | `false` | Ob gerade Pause ist |
-| `restTimeRemaining` | `number` | `0` | Verbleibende Pausenzeit |
-| `exerciseTimeRemaining` | `number` | - | Timer für zeitbasierte Übungen |
-| `onCompleteSet` | `() => void` | - | Set abschließen |
-| `onSkipRest` | `() => void` | - | Pause überspringen |
+| Prop                    | Type              | Default    | Beschreibung                   |
+| ----------------------- | ----------------- | ---------- | ------------------------------ |
+| `exercise`              | `SessionExercise` | (required) | Übungsdaten                    |
+| `isActive`              | `boolean`         | `false`    | Ob die Übung gerade aktiv ist  |
+| `completedSets`         | `number`          | `0`        | Anzahl abgeschlossener Sets    |
+| `isResting`             | `boolean`         | `false`    | Ob gerade Pause ist            |
+| `restTimeRemaining`     | `number`          | `0`        | Verbleibende Pausenzeit        |
+| `exerciseTimeRemaining` | `number`          | -          | Timer für zeitbasierte Übungen |
+| `onCompleteSet`         | `() => void`      | -          | Set abschließen                |
+| `onSkipRest`            | `() => void`      | -          | Pause überspringen             |
 
 ### Zustände
 
@@ -248,18 +251,18 @@ Basis-Übungskarte für die Übungsdatenbank.
 ### Import
 
 ```typescript
-import { ExerciseCard } from '@/components/exercise-card';
+import { ExerciseCard } from "@/components/exercise-card";
 ```
 
 ### Props
 
-| Prop | Type | Default | Beschreibung |
-|------|------|---------|--------------|
-| `exercise` | `ExerciseInfo` | (required) | Übungsdaten |
-| `onPress` | `() => void` | - | Klick-Handler |
-| `onLongPress` | `() => void` | - | Long-Press (GIF Vorschau) |
-| `showAddButton` | `boolean` | `false` | "Hinzufügen" Button zeigen |
-| `onAdd` | `() => void` | - | Hinzufügen-Handler |
+| Prop            | Type           | Default    | Beschreibung               |
+| --------------- | -------------- | ---------- | -------------------------- |
+| `exercise`      | `ExerciseInfo` | (required) | Übungsdaten                |
+| `onPress`       | `() => void`   | -          | Klick-Handler              |
+| `onLongPress`   | `() => void`   | -          | Long-Press (GIF Vorschau)  |
+| `showAddButton` | `boolean`      | `false`    | "Hinzufügen" Button zeigen |
+| `onAdd`         | `() => void`   | -          | Hinzufügen-Handler         |
 
 ---
 
@@ -270,17 +273,17 @@ Text-Komponente mit automatischer Theme-Unterstützung.
 ### Import
 
 ```typescript
-import { ThemedText } from '@/components/themed-text';
+import { ThemedText } from "@/components/themed-text";
 ```
 
 ### Props
 
-| Prop | Type | Default | Beschreibung |
-|------|------|---------|--------------|
-| `type` | `'default' \| 'title' \| 'subtitle' \| 'link'` | `'default'` | Textstil |
-| `lightColor` | `string` | - | Override für Light Mode |
-| `darkColor` | `string` | - | Override für Dark Mode |
-| `...TextProps` | - | - | Alle React Native Text Props |
+| Prop           | Type                                           | Default     | Beschreibung                 |
+| -------------- | ---------------------------------------------- | ----------- | ---------------------------- |
+| `type`         | `'default' \| 'title' \| 'subtitle' \| 'link'` | `'default'` | Textstil                     |
+| `lightColor`   | `string`                                       | -           | Override für Light Mode      |
+| `darkColor`    | `string`                                       | -           | Override für Dark Mode       |
+| `...TextProps` | -                                              | -           | Alle React Native Text Props |
 
 ### Beispiel
 
@@ -300,16 +303,16 @@ View-Komponente mit automatischer Theme-Unterstützung.
 ### Import
 
 ```typescript
-import { ThemedView } from '@/components/themed-view';
+import { ThemedView } from "@/components/themed-view";
 ```
 
 ### Props
 
-| Prop | Type | Default | Beschreibung |
-|------|------|---------|--------------|
-| `lightColor` | `string` | - | Override für Light Mode |
-| `darkColor` | `string` | - | Override für Dark Mode |
-| `...ViewProps` | - | - | Alle React Native View Props |
+| Prop           | Type     | Default | Beschreibung                 |
+| -------------- | -------- | ------- | ---------------------------- |
+| `lightColor`   | `string` | -       | Override für Light Mode      |
+| `darkColor`    | `string` | -       | Override für Dark Mode       |
+| `...ViewProps` | -        | -       | Alle React Native View Props |
 
 ### Beispiel
 
@@ -318,8 +321,8 @@ import { ThemedView } from '@/components/themed-view';
   <ThemedText>Inhalt</ThemedText>
 </ThemedView>
 
-<ThemedView 
-  lightColor="#f0f0f0" 
+<ThemedView
+  lightColor="#f0f0f0"
   darkColor="#1a1a1a"
   style={styles.card}
 >
@@ -364,10 +367,10 @@ const styles = StyleSheet.create({
 ### Animierte Komponenten
 
 ```typescript
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring
 } from 'react-native-reanimated';
 
 export function AnimatedCard({ isActive }) {

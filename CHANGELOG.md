@@ -10,6 +10,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### ✨ Hinzugefügt
 
 #### Workout Session Management
+
 - **Session erstellen & verwalten** - Erstelle individuelle Trainingseinheiten mit Namen und Beschreibung
 - **Session Store** - Zentrales State Management für alle Sessions mit Zustand-ähnlicher API
 - **Übungen hinzufügen** - Modal zum Durchsuchen und Hinzufügen von Übungen aus der Datenbank
@@ -17,6 +18,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **Status-Synchronisation** - Workout-Status wird automatisch auf der Hauptseite aktualisiert
 
 #### 3D-Karussell
+
 - **Carousel3D Komponente** - Beeindruckendes 3D-Karussell mit perspektivischer Darstellung
 - **Smooth Animations** - Flüssige Swipe-Gesten mit Spring-Animationen (react-native-reanimated)
 - **Aktiver Index Sync** - Karussell synchronisiert sich mit externen Index-Änderungen
@@ -24,12 +26,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **Workout-Integration** - Karussell funktioniert auch während des aktiven Trainings
 
 #### Drag & Drop
+
 - **DraggableList Komponente** - Übungen per Drag & Drop neu sortieren
 - **Long-Press Aktivierung** - 200ms langes Drücken aktiviert den Drag-Modus
 - **Visual Feedback** - Visuelles Feedback während des Ziehens (Schatten, Skalierung)
 - **Smooth Reordering** - Animierte Neuanordnung der Elemente
 
 #### Workout-Modus
+
 - **WorkoutExerciseCard** - Spezialisierte Karten für den Workout-Modus
 - **Set-Tracking** - Fortschrittsanzeige für abgeschlossene Sets
 - **Workout-Timer** - Gesamtdauer des Trainings
@@ -37,6 +41,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **Übungs-Timer** - Timer für zeitbasierte Übungen (z.B. Planks)
 
 #### UI/UX
+
 - **Dark Mode Support** - Vollständige Unterstützung für Dark/Light Mode
 - **Theme System** - Zentrales Farbsystem mit Akzentfarbe (#5c77ba)
 - **Responsive Design** - Optimiert für verschiedene Bildschirmgrößen
@@ -44,12 +49,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **GestureHandlerRootView** - Korrekte Integration für Touch-Gesten
 
 #### Datenmodelle
+
 - **Exercise Model** - Umfassendes Übungsmodell mit allen relevanten Eigenschaften
 - **Session Model** - Sessions mit Übungen, Status und Metadaten
 - **SessionExercise** - Übungskonfiguration pro Session (Sets, Reps, Gewicht)
 - **TypeScript Types** - Vollständige Typisierung aller Datenstrukturen
 
 #### Übungsdatenbank
+
 - **ExerciseInfo Interface** - Standardisiertes Format für Übungen
 - **Kategorien** - Strength, Cardio, Flexibility, Balance, Endurance
 - **Schwierigkeitsgrade** - Beginner, Intermediate, Advanced
@@ -69,18 +76,21 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ## Geplant für zukünftige Versionen
 
 ### [1.1.0] - Geplant
+
 - [ ] Workout-Historie
 - [ ] Statistiken und Fortschritts-Tracking
 - [ ] Export/Import von Sessions
 - [ ] Cloud-Synchronisation
 
 ### [1.2.0] - Geplant
+
 - [ ] Übungen aus API laden (ExerciseDB)
 - [ ] Eigene Übungen erstellen
 - [ ] Bilder/GIFs für Übungen
 - [ ] Video-Tutorials
 
 ### [2.0.0] - Geplant
+
 - [ ] Multi-User Support
 - [ ] Trainingsplanung (Wochenplan)
 - [ ] Push-Benachrichtigungen
