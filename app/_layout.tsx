@@ -7,7 +7,7 @@ import {
     DefaultTheme,
     ThemeProvider,
 } from "@react-navigation/native";
-import { Stack, Redirect, useSegments } from "expo-router";
+import { Slot, Redirect, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
@@ -21,47 +21,35 @@ function RootLayoutNav() {
   const { isLoaded, hasCompletedOnboarding } = useUserStore();
   const segments = useSegments();
 
-  // Ladebildschirm während Store lädt
+  // Ladebildschirm während Store lädt - aber Slot muss trotzdem rendern!
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Colors.dark.background }}>
-        <ActivityIndicator size="large" color={Colors.dark.accent} />
-      </View>
+      <>
+        <Slot />
+        <View style={{ 
+          position: 'absolute', 
+          top: 0, left: 0, right: 0, bottom: 0,
+          alignItems: "center", 
+          justifyContent: "center", 
+          backgroundColor: Colors.dark.background 
+        }}>
+          <ActivityIndicator size="large" color={Colors.dark.accent} />
+        </View>
+      </>
     );
   }
 
   const inOnboarding = segments[0] === "onboarding";
 
   // Redirect-Logik mit der Redirect-Komponente
-  // Diese wird erst gerendert nachdem der Stack gemountet ist
   const needsOnboarding = !hasCompletedOnboarding && !inOnboarding;
   const needsHome = hasCompletedOnboarding && inOnboarding;
 
   return (
     <>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen 
-          name="onboarding" 
-          options={{ 
-            headerShown: false,
-            gestureEnabled: false,
-          }} 
-        />
-        <Stack.Screen 
-          name="profile" 
-          options={{ 
-            headerShown: false,
-            presentation: "card",
-          }} 
-        />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-      </Stack>
+      <Slot />
       
-      {/* Redirect nach Stack-Mount */}
+      {/* Redirect nach Slot-Mount */}
       {needsOnboarding && <Redirect href="/onboarding" />}
       {needsHome && <Redirect href="/(tabs)" />}
       
