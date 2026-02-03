@@ -40,6 +40,10 @@ function MiniExerciseCard({
     border: isDark ? "rgba(92, 119, 186, 0.3)" : "rgba(92, 119, 186, 0.2)",
   };
 
+  // Kurze Instruktion (erster Schritt, gekürzt)
+  const shortInstruction = exercise.exerciseInfo.instructions?.[0]
+    ?.slice(0, 40) || "Übung korrekt ausführen";
+
   return (
     <View
       style={[
@@ -81,32 +85,24 @@ function MiniExerciseCard({
         {exercise.exerciseInfo.name}
       </Text>
 
-      {/* Stats Row */}
+      {/* Stats Row: Sets x Reps/Zeit + Gewicht */}
       <View style={styles.miniStats}>
-        <Text style={[styles.miniStatText, { color: colors.textMuted }]}>
-          {exercise.sets}x
-          {isTimerMode
-            ? ` ${formatSeconds(exercise.duration)}`
-            : ` ${exercise.reps}`}
+        <Text style={[styles.miniStatText, { color: colors.textSecondary }]}>
+          {exercise.sets}x{" "}
+          {isTimerMode ? formatSeconds(exercise.duration) : `${exercise.reps} Wdh`}
         </Text>
-        {exercise.weight > 0 && (
-          <Text style={[styles.miniStatText, { color: colors.textMuted }]}>
-            {exercise.weight}kg
-          </Text>
-        )}
+        <Text style={[styles.miniStatWeight, { color: colors.accentPrimary }]}>
+          {exercise.weight > 0 ? `${exercise.weight}kg` : "—"}
+        </Text>
       </View>
 
-      {/* Intensity Bar */}
-      <View
-        style={[styles.intensityBar, { backgroundColor: colors.bgSecondary }]}
+      {/* Kurze Instruktion */}
+      <Text 
+        style={[styles.miniInstruction, { color: colors.textMuted }]}
+        numberOfLines={1}
       >
-        <View
-          style={[
-            styles.intensityFill,
-            { width: "75%", backgroundColor: colors.accentPrimary },
-          ]}
-        />
-      </View>
+        💡 {shortInstruction}...
+      </Text>
     </View>
   );
 }
@@ -191,7 +187,7 @@ export function ExerciseCardStack({
 }
 
 const CARD_WIDTH = 110;
-const CARD_HEIGHT = 130;
+const CARD_HEIGHT = 115;
 const STACK_OFFSET = 12;
 
 const styles = StyleSheet.create({
@@ -266,13 +262,13 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT,
     borderRadius: 12,
     borderWidth: 1,
-    padding: 8,
-    gap: 4,
+    padding: 6,
+    gap: 2,
   },
   miniImageContainer: {
     position: "relative",
     width: "100%",
-    height: 55,
+    height: 45,
   },
   miniImage: {
     width: "100%",
@@ -291,7 +287,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   miniName: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
     fontFamily: Fonts.semiBold,
   },
@@ -305,14 +301,14 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: Fonts.sans,
   },
-  intensityBar: {
-    height: 3,
-    borderRadius: 1.5,
-    overflow: "hidden",
+  miniStatWeight: {
+    fontSize: 9,
+    fontWeight: "700",
+    fontFamily: Fonts.semiBold,
   },
-  intensityFill: {
-    height: "100%",
-    borderRadius: 1.5,
+  miniInstruction: {
+    fontSize: 7,
+    fontFamily: Fonts.sans,
   },
   counterBadge: {
     position: "absolute",

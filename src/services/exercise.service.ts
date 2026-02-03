@@ -2,16 +2,11 @@ import type { Exercise } from "../models";
 
 /**
  * Exercise Service
- * Zentrale Schnittstelle für Übungsdaten
- * Wird später für API/Datenbank-Integration verwendet
+ * Hilfsfunktionen für Workout-Berechnungen
+ *
+ * Hinweis: Übungsdaten werden jetzt aus Firebase geladen.
+ * Siehe: firebase.service.ts
  */
-
-// Re-export der Mock-Funktionen (werden später durch echte API ersetzt)
-export {
-    getExerciseById,
-    getExercises,
-    getExercisesByCategory
-} from "../data/exercises.data";
 
 /**
  * Berechnet die geschätzte Gesamtdauer eines Workouts

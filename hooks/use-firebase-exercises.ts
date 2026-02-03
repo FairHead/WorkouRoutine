@@ -5,13 +5,13 @@
  * und bietet Such- und Filterfunktionen mit React State Management.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ExerciseInfo } from "@/src/models";
 import {
-  getAllBodyPartsFromFirebase,
-  getAllEquipmentFromFirebase,
-  getAllExercisesFromFirebase,
+    getAllBodyPartsFromFirebase,
+    getAllEquipmentFromFirebase,
+    getAllExercisesFromFirebase,
 } from "@/src/services/firebase.service";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface UseFirebaseExercisesOptions {
   /** Automatisch laden beim Mount */
@@ -55,7 +55,7 @@ interface UseFirebaseExercisesReturn {
   setSelectedEquipment: (equipment: string | null) => void;
   /** Schwierigkeits-Filter setzen */
   setSelectedDifficulty: (
-    difficulty: "beginner" | "intermediate" | "advanced" | null
+    difficulty: "beginner" | "intermediate" | "advanced" | null,
   ) => void;
   /** Alle Filter zurücksetzen */
   clearFilters: () => void;
@@ -69,9 +69,13 @@ interface UseFirebaseExercisesReturn {
  * Hook für Firebase Übungen mit Such- und Filterfunktionen
  */
 export function useFirebaseExercises(
-  options: UseFirebaseExercisesOptions = {}
+  options: UseFirebaseExercisesOptions = {},
 ): UseFirebaseExercisesReturn {
-  const { autoLoad = true, initialSearch = "", initialBodyPart = null } = options;
+  const {
+    autoLoad = true,
+    initialSearch = "",
+    initialBodyPart = null,
+  } = options;
 
   // State
   const [exercises, setExercises] = useState<ExerciseInfo[]>([]);
@@ -83,9 +87,11 @@ export function useFirebaseExercises(
   // Filter State
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(
-    initialBodyPart
+    initialBodyPart,
   );
-  const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
+  const [selectedEquipment, setSelectedEquipment] = useState<string | null>(
+    null,
+  );
   const [selectedDifficulty, setSelectedDifficulty] = useState<
     "beginner" | "intermediate" | "advanced" | null
   >(null);
@@ -112,9 +118,7 @@ export function useFirebaseExercises(
     } catch (err) {
       console.error("Error loading exercises:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Fehler beim Laden der Übungen"
+        err instanceof Error ? err.message : "Fehler beim Laden der Übungen",
       );
     } finally {
       setIsLoading(false);
@@ -144,21 +148,21 @@ export function useFirebaseExercises(
           ex.name.toLowerCase().includes(lowerSearch) ||
           ex.targetMuscle.toLowerCase().includes(lowerSearch) ||
           ex.bodyPart.toLowerCase().includes(lowerSearch) ||
-          ex.equipment.toLowerCase().includes(lowerSearch)
+          ex.equipment.toLowerCase().includes(lowerSearch),
       );
     }
 
     // Körperteil Filter
     if (selectedBodyPart) {
       results = results.filter(
-        (ex) => ex.bodyPart.toLowerCase() === selectedBodyPart.toLowerCase()
+        (ex) => ex.bodyPart.toLowerCase() === selectedBodyPart.toLowerCase(),
       );
     }
 
     // Equipment Filter
     if (selectedEquipment) {
       results = results.filter(
-        (ex) => ex.equipment.toLowerCase() === selectedEquipment.toLowerCase()
+        (ex) => ex.equipment.toLowerCase() === selectedEquipment.toLowerCase(),
       );
     }
 
@@ -193,7 +197,7 @@ export function useFirebaseExercises(
     (id: string): ExerciseInfo | undefined => {
       return exercises.find((ex) => ex.id === id);
     },
-    [exercises]
+    [exercises],
   );
 
   return {

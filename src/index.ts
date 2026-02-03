@@ -12,17 +12,11 @@ export type {
     Workout
 } from "./models";
 
-// Data
-export { mockExercises } from "./data";
-
 // Services
 export {
     calculateTotalCalories,
     calculateTotalDuration,
     formatDuration,
-    formatDurationWithUnit,
-    getExerciseById,
-    getExercises,
-    getExercisesByCategory
+    formatDurationWithUnit
 } from "./services";
 

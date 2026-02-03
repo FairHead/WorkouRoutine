@@ -1,10 +1,12 @@
 import { Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useUserStore } from "@/hooks/use-user-store";
 import type { SessionExercise } from "@/src/models";
+import { calculateCalories } from "@/src/services/calorie-calculator.service";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useState } from "react";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 interface SessionExerciseCardProps {
   exercise: SessionExercise;
@@ -17,6 +19,8 @@ interface SessionExerciseCardProps {
   onPress?: () => void;
   /** Callback für Löschen-Button */
   onRemove?: () => void;
+  /** Callback für Änderungen an Sets/Reps/Weight */
+  onUpdate?: (updates: Partial<SessionExercise>) => void;
 }
 
 /** Formatiert Sekunden in "MM:SS min" Format */
@@ -29,17 +33,6 @@ function formatDuration(seconds: number): string {
 /** Formatiert Sekunden in "XXs" Format */
 function formatSeconds(seconds: number): string {
   return `${seconds}s`;
-}
-
-/** Berechnet geschätzte Kalorien basierend auf Sets, Reps/Duration und Intensität */
-function estimateCalories(exercise: SessionExercise): number {
-  const baseCaloriesPerSet = 8;
-  const isTimer = exercise.mode === "timer";
-  const workPerSet = isTimer ? exercise.duration / 10 : exercise.reps;
-  const intensityMultiplier = 0.8; // Basis-Intensität
-  return Math.round(
-    exercise.sets * workPerSet * baseCaloriesPerSet * intensityMultiplier,
-  );
 }
 
 /** Berechnet Gesamt-Trainingsdauer in Sekunden */
@@ -58,22 +51,80 @@ export function SessionExerciseCard({
   variant = "default",
   onPress,
   onRemove,
+  onUpdate,
 }: SessionExerciseCardProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  
+  // Hole Kalorienberechnungs-Profil aus dem User Store
+  const { getCalorieProfile } = useUserStore();
+  const userProfile = getCalorieProfile();
 
   // Timing Mode State (Total vs Intervals)
   const [timingMode, setTimingMode] = useState<"total" | "intervals">("total");
+  // Instruction Accordion State
+  const [instructionsExpanded, setInstructionsExpanded] = useState(false);
+  // Numpad Modal State
+  const [numpadVisible, setNumpadVisible] = useState(false);
+  const [numpadField, setNumpadField] = useState<"sets" | "reps" | "weight" | "duration">("sets");
+  const [numpadValue, setNumpadValue] = useState("");
 
   const isTimerMode = exercise.mode === "timer";
   const intensity = 75; // Basis-Intensität für Session-Übungen
-  const calories = estimateCalories(exercise);
+  // Wissenschaftliche Kalorienberechnung mit MET-Werten
+  // Nutzt Benutzerprofil oder Standardwerte falls nicht vorhanden
+  const calories = calculateCalories(exercise, userProfile);
   const totalDuration = calculateTotalDuration(exercise);
   const setDuration = isTimerMode ? exercise.duration : exercise.reps * 3;
 
   // Use compact prop or variant
   const isCompact = compact || variant === "compact";
   const isDetail = variant === "detail";
+
+  // Numpad öffnen
+  const openNumpad = useCallback((field: "sets" | "reps" | "weight" | "duration", currentValue: number) => {
+    if (!onUpdate) return; // Nur wenn onUpdate vorhanden
+    setNumpadField(field);
+    setNumpadValue(currentValue.toString());
+    setNumpadVisible(true);
+  }, [onUpdate]);
+
+  // Numpad Eingabe
+  const handleNumpadPress = useCallback((key: string) => {
+    if (key === "backspace") {
+      setNumpadValue(prev => prev.slice(0, -1));
+    } else if (key === "clear") {
+      setNumpadValue("");
+    } else if (key === ".") {
+      if (!numpadValue.includes(".")) {
+        setNumpadValue(prev => prev + ".");
+      }
+    } else {
+      // Max 4 Ziffern
+      if (numpadValue.replace(".", "").length < 4) {
+        setNumpadValue(prev => prev + key);
+      }
+    }
+  }, [numpadValue]);
+
+  // Numpad bestätigen
+  const handleNumpadConfirm = useCallback(() => {
+    const value = parseFloat(numpadValue) || 0;
+    if (onUpdate) {
+      onUpdate({ [numpadField]: value });
+    }
+    setNumpadVisible(false);
+  }, [numpadValue, numpadField, onUpdate]);
+
+  // Numpad Label
+  const getNumpadLabel = () => {
+    switch (numpadField) {
+      case "sets": return "Sätze";
+      case "reps": return "Wiederholungen";
+      case "weight": return "Gewicht (kg)";
+      case "duration": return "Dauer (Sek.)";
+    }
+  };
 
   // Theme Colors
   const colors = {
@@ -393,9 +444,13 @@ export function SessionExerciseCard({
             {exercise.exerciseInfo.name}
           </Text>
 
-          {/* Main Stats - Big Numbers */}
+          {/* Main Stats - kompakter & klickbar */}
           <View style={styles.detailCarouselStatsRow}>
-            <View style={styles.detailCarouselStatBlock}>
+            <Pressable 
+              style={[styles.detailCarouselStatBlock, onUpdate && styles.detailCarouselStatClickable]}
+              onPress={() => openNumpad("sets", exercise.sets)}
+              disabled={!onUpdate}
+            >
               <Text
                 style={[
                   styles.detailCarouselStatValue,
@@ -412,14 +467,21 @@ export function SessionExerciseCard({
               >
                 Sets
               </Text>
-            </View>
+              {onUpdate && (
+                <Ionicons name="pencil" size={10} color={colors.textMuted} style={styles.editIcon} />
+              )}
+            </Pressable>
             <View
               style={[
                 styles.detailCarouselDivider,
                 { backgroundColor: colors.border },
               ]}
             />
-            <View style={styles.detailCarouselStatBlock}>
+            <Pressable 
+              style={[styles.detailCarouselStatBlock, onUpdate && styles.detailCarouselStatClickable]}
+              onPress={() => openNumpad(isTimerMode ? "duration" : "reps", isTimerMode ? exercise.duration : exercise.reps)}
+              disabled={!onUpdate}
+            >
               <Text
                 style={[
                   styles.detailCarouselStatValue,
@@ -434,38 +496,110 @@ export function SessionExerciseCard({
                   { color: colors.textMuted },
                 ]}
               >
-                {isTimerMode ? "Sekunden" : "Wdh."}
+                {isTimerMode ? "Sek." : "Wdh."}
               </Text>
-            </View>
-            {exercise.weight > 0 && (
-              <>
-                <View
-                  style={[
-                    styles.detailCarouselDivider,
-                    { backgroundColor: colors.border },
-                  ]}
-                />
-                <View style={styles.detailCarouselStatBlock}>
+              {onUpdate && (
+                <Ionicons name="pencil" size={10} color={colors.textMuted} style={styles.editIcon} />
+              )}
+            </Pressable>
+            <View
+              style={[
+                styles.detailCarouselDivider,
+                { backgroundColor: colors.border },
+              ]}
+            />
+            <Pressable 
+              style={[styles.detailCarouselStatBlock, onUpdate && styles.detailCarouselStatClickable]}
+              onPress={() => openNumpad("weight", exercise.weight)}
+              disabled={!onUpdate}
+            >
+              <Text
+                style={[
+                  styles.detailCarouselStatValue,
+                  { color: colors.accentPrimary },
+                ]}
+              >
+                {exercise.weight > 0 ? exercise.weight : "—"}
+              </Text>
+              <Text
+                style={[
+                  styles.detailCarouselStatLabel,
+                  { color: colors.textMuted },
+                ]}
+              >
+                kg
+              </Text>
+              {onUpdate && (
+                <Ionicons name="pencil" size={10} color={colors.textMuted} style={styles.editIcon} />
+              )}
+            </Pressable>
+          </View>
+
+          {/* Ausklappbare Ausführungsanleitung */}
+          {exercise.exerciseInfo.instructions?.length > 0 && (
+            <View style={styles.detailCarouselInstructionContainer}>
+              <Pressable
+                style={[
+                  styles.detailCarouselInstructionHeader,
+                  { backgroundColor: colors.bgSecondary },
+                ]}
+                onPress={() => setInstructionsExpanded(!instructionsExpanded)}
+              >
+                <View style={styles.detailCarouselInstructionHeaderLeft}>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={16}
+                    color={colors.accentPrimary}
+                  />
                   <Text
                     style={[
-                      styles.detailCarouselStatValue,
-                      { color: colors.accentPrimary },
+                      styles.detailCarouselInstructionHeaderText,
+                      { color: colors.textPrimary },
                     ]}
                   >
-                    {exercise.weight}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.detailCarouselStatLabel,
-                      { color: colors.textMuted },
-                    ]}
-                  >
-                    kg
+                    Ausführung
                   </Text>
                 </View>
-              </>
-            )}
-          </View>
+                <Ionicons
+                  name={instructionsExpanded ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={colors.textMuted}
+                />
+              </Pressable>
+              
+              {instructionsExpanded && (
+                <ScrollView
+                  style={[
+                    styles.detailCarouselInstructionContent,
+                    { backgroundColor: colors.bgSecondary },
+                  ]}
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator={true}
+                >
+                  {exercise.exerciseInfo.instructions.map((instruction, idx) => (
+                    <View key={idx} style={styles.detailCarouselInstructionStep}>
+                      <Text
+                        style={[
+                          styles.detailCarouselInstructionStepNumber,
+                          { color: colors.accentPrimary },
+                        ]}
+                      >
+                        {idx + 1}.
+                      </Text>
+                      <Text
+                        style={[
+                          styles.detailCarouselInstructionStepText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {instruction}
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          )}
 
           {/* Rest Times Row */}
           <View
@@ -587,6 +721,110 @@ export function SessionExerciseCard({
             </View>
           )}
         </View>
+
+        {/* Numpad Modal */}
+        <Modal
+          visible={numpadVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setNumpadVisible(false)}
+        >
+          <Pressable 
+            style={styles.numpadOverlay}
+            onPress={() => setNumpadVisible(false)}
+          >
+            <Pressable 
+              style={[styles.numpadContainer, { backgroundColor: colors.bgPrimary }]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <View style={styles.numpadHeader}>
+                <Text style={[styles.numpadTitle, { color: colors.textPrimary }]}>
+                  {getNumpadLabel()}
+                </Text>
+                <Pressable onPress={() => setNumpadVisible(false)}>
+                  <Ionicons name="close" size={24} color={colors.textMuted} />
+                </Pressable>
+              </View>
+
+              {/* Display */}
+              <View style={[styles.numpadDisplay, { backgroundColor: colors.bgSecondary }]}>
+                <Text style={[styles.numpadDisplayText, { color: colors.accentPrimary }]}>
+                  {numpadValue || "0"}
+                </Text>
+              </View>
+
+              {/* Numpad Grid - 4x3 Layout */}
+              <View style={styles.numpadGrid}>
+                {/* Reihe 1 */}
+                <View style={styles.numpadRow}>
+                  {["1", "2", "3"].map((key) => (
+                    <Pressable
+                      key={key}
+                      style={[styles.numpadKey, { backgroundColor: colors.bgSecondary }]}
+                      onPress={() => handleNumpadPress(key)}
+                    >
+                      <Text style={[styles.numpadKeyText, { color: colors.textPrimary }]}>{key}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {/* Reihe 2 */}
+                <View style={styles.numpadRow}>
+                  {["4", "5", "6"].map((key) => (
+                    <Pressable
+                      key={key}
+                      style={[styles.numpadKey, { backgroundColor: colors.bgSecondary }]}
+                      onPress={() => handleNumpadPress(key)}
+                    >
+                      <Text style={[styles.numpadKeyText, { color: colors.textPrimary }]}>{key}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {/* Reihe 3 */}
+                <View style={styles.numpadRow}>
+                  {["7", "8", "9"].map((key) => (
+                    <Pressable
+                      key={key}
+                      style={[styles.numpadKey, { backgroundColor: colors.bgSecondary }]}
+                      onPress={() => handleNumpadPress(key)}
+                    >
+                      <Text style={[styles.numpadKeyText, { color: colors.textPrimary }]}>{key}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {/* Reihe 4 */}
+                <View style={styles.numpadRow}>
+                  <Pressable
+                    style={[styles.numpadKey, { backgroundColor: colors.bgSecondary }]}
+                    onPress={() => handleNumpadPress(".")}
+                  >
+                    <Text style={[styles.numpadKeyText, { color: colors.textPrimary }]}>.</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.numpadKey, { backgroundColor: colors.bgSecondary }]}
+                    onPress={() => handleNumpadPress("0")}
+                  >
+                    <Text style={[styles.numpadKeyText, { color: colors.textPrimary }]}>0</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.numpadKey, { backgroundColor: colors.bgSecondary }]}
+                    onPress={() => handleNumpadPress("backspace")}
+                  >
+                    <Ionicons name="backspace-outline" size={24} color={colors.textPrimary} />
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Confirm Button */}
+              <Pressable
+                style={[styles.numpadConfirm, { backgroundColor: colors.accentPrimary }]}
+                onPress={handleNumpadConfirm}
+              >
+                <Text style={styles.numpadConfirmText}>Bestätigen</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     );
   }
@@ -1058,36 +1296,79 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   detailCarouselContent: {
-    padding: 16,
-    gap: 12,
+    padding: 12,
+    gap: 8,
   },
   detailCarouselName: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: Fonts.bold,
   },
   detailCarouselStatsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 16,
+    gap: 12,
   },
   detailCarouselStatBlock: {
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   detailCarouselStatValue: {
-    fontSize: 32,
+    fontSize: 24,
     fontFamily: Fonts.bold,
   },
   detailCarouselStatLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: Fonts.medium,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   detailCarouselDivider: {
     width: 1,
-    height: 40,
+    height: 30,
+  },
+  detailCarouselInstructionContainer: {
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  detailCarouselInstructionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 10,
+    borderRadius: 10,
+  },
+  detailCarouselInstructionHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  detailCarouselInstructionHeaderText: {
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+  },
+  detailCarouselInstructionContent: {
+    maxHeight: 100,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+  detailCarouselInstructionStep: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 6,
+  },
+  detailCarouselInstructionStepNumber: {
+    fontSize: 12,
+    fontFamily: Fonts.semiBold,
+    width: 18,
+  },
+  detailCarouselInstructionStepText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    lineHeight: 18,
   },
   detailCarouselRestRow: {
     flexDirection: "row",
@@ -1137,5 +1418,94 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Fonts.regular,
     fontStyle: "italic",
+  },
+  // Clickable Stats
+  detailCarouselStatClickable: {
+    paddingVertical: 4,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: "rgba(92, 119, 186, 0.08)",
+  },
+  editIcon: {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    opacity: 0.5,
+  },
+  // Numpad Modal
+  numpadOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  numpadContainer: {
+    width: 280,
+    borderRadius: 20,
+    padding: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  numpadHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  numpadTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.semiBold,
+  },
+  numpadDisplay: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  numpadDisplayText: {
+    fontSize: 36,
+    fontFamily: Fonts.bold,
+  },
+  numpadGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  numpadRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 8,
+  },
+  numpadKey: {
+    width: 72,
+    height: 48,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  numpadKeyText: {
+    fontSize: 24,
+    fontFamily: Fonts.semiBold,
+  },
+  numpadConfirm: {
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  numpadConfirmText: {
+    color: "#fff",
+    fontSize: 16,
+    fontFamily: Fonts.semiBold,
   },
 });

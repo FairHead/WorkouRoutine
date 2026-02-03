@@ -90,7 +90,11 @@ export default function ExerciseSearchScreen() {
         style={[styles.container, { backgroundColor: colors.background }]}
       >
         <View style={styles.errorContainer}>
-          <Ionicons name="cloud-offline" size={64} color={colors.textSecondary} />
+          <Ionicons
+            name="cloud-offline"
+            size={64}
+            color={colors.textSecondary}
+          />
           <Text style={[styles.errorTitle, { color: colors.text }]}>
             Verbindungsfehler
           </Text>

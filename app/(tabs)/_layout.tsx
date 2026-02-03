@@ -32,10 +32,10 @@ export default function TabLayout() {
         options={{
           title: "Übungen",
           tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons 
-              name={focused ? "arm-flex" : "arm-flex-outline"} 
-              size={26} 
-              color={color} 
+            <MaterialCommunityIcons
+              name={focused ? "arm-flex" : "arm-flex-outline"}
+              size={26}
+              color={color}
             />
           ),
         }}

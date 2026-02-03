@@ -1,20 +1,9 @@
 /**
- * Data - Zentrale Export-Datei für alle Mock-Daten
+ * Data - Zentrale Export-Datei
+ *
+ * Hinweis: Mock-Daten wurden entfernt.
+ * Alle Übungsdaten werden jetzt aus Firebase geladen.
+ * Siehe: src/services/firebase.service.ts
  */
 
-export {
-    getExerciseById,
-    getExercises,
-    getExercisesByCategory,
-    mockExercises
-} from "./exercises.data";
-
-export {
-    exerciseDatabase,
-    getAllBodyParts,
-    getExerciseInfoById,
-    getExercisesByBodyPart,
-    getExercisesByDifficulty,
-    searchExercises
-} from "./exercise-database";
-
+// Keine lokalen Mock-Daten mehr - Firebase ist die einzige Datenquelle

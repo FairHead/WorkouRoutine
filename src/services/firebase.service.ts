@@ -5,12 +5,7 @@
  * und bietet Such- und Filterfunktionen.
  */
 
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-} from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase.config";
 import type { ExerciseCategory, ExerciseInfo } from "../models";
 
@@ -48,14 +43,16 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 Minuten
  */
 function convertToExerciseInfo(
   id: string,
-  data: FirebaseExercise
+  data: FirebaseExercise,
 ): ExerciseInfo {
   return {
     id,
     exerciseDbId: data.exerciseDbId,
     name: data.name,
     // Bild als URI-Objekt für React Native Image
-    image: data.imageUrl ? { uri: data.imageUrl } : require("../../assets/images/icon.png"),
+    image: data.imageUrl
+      ? { uri: data.imageUrl }
+      : require("../../assets/images/icon.png"),
     // Zweites Bild als separate Property
     imageUrl2: data.imageUrl2 || undefined,
     gifUrl: undefined, // Kann später durch Tenor API geladen werden
@@ -65,7 +62,10 @@ function convertToExerciseInfo(
     equipment: data.equipment || "body only",
     instructions: data.instructions || [],
     description: data.instructions?.[0] || undefined,
-    caloriesPerMinute: estimateCaloriesPerMinute(data.category, data.difficulty),
+    caloriesPerMinute: estimateCaloriesPerMinute(
+      data.category,
+      data.difficulty,
+    ),
     difficulty: mapDifficulty(data.difficulty),
     category: mapCategory(data.category),
   };
@@ -74,7 +74,10 @@ function convertToExerciseInfo(
 /**
  * Schätzt Kalorien pro Minute basierend auf Kategorie und Schwierigkeit
  */
-function estimateCaloriesPerMinute(category: string, difficulty: string): number {
+function estimateCaloriesPerMinute(
+  category: string,
+  difficulty: string,
+): number {
   const baseCalories: Record<string, number> = {
     strength: 5,
     cardio: 10,
@@ -102,7 +105,9 @@ function estimateCaloriesPerMinute(category: string, difficulty: string): number
 /**
  * Mappt Schwierigkeitsgrad auf valide Werte
  */
-function mapDifficulty(level: string): "beginner" | "intermediate" | "advanced" {
+function mapDifficulty(
+  level: string,
+): "beginner" | "intermediate" | "advanced" {
   switch (level?.toLowerCase()) {
     case "beginner":
       return "beginner";
@@ -178,7 +183,7 @@ export async function getAllExercisesFromFirebase(): Promise<ExerciseInfo[]> {
  * Lädt eine einzelne Übung nach ID
  */
 export async function getExerciseByIdFromFirebase(
-  id: string
+  id: string,
 ): Promise<ExerciseInfo | null> {
   // Erst im Cache suchen
   if (exerciseCache) {
@@ -191,7 +196,10 @@ export async function getExerciseByIdFromFirebase(
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return convertToExerciseInfo(docSnap.id, docSnap.data() as FirebaseExercise);
+      return convertToExerciseInfo(
+        docSnap.id,
+        docSnap.data() as FirebaseExercise,
+      );
     }
     return null;
   } catch (error) {
@@ -204,7 +212,7 @@ export async function getExerciseByIdFromFirebase(
  * Sucht Übungen nach Name
  */
 export async function searchExercisesInFirebase(
-  searchTerm: string
+  searchTerm: string,
 ): Promise<ExerciseInfo[]> {
   // Alle Übungen laden und lokal filtern (Firestore hat keine LIKE-Suche)
   const allExercises = await getAllExercisesFromFirebase();
@@ -217,7 +225,7 @@ export async function searchExercisesInFirebase(
       ex.name.toLowerCase().includes(lowerSearch) ||
       ex.targetMuscle.toLowerCase().includes(lowerSearch) ||
       ex.bodyPart.toLowerCase().includes(lowerSearch) ||
-      ex.equipment.toLowerCase().includes(lowerSearch)
+      ex.equipment.toLowerCase().includes(lowerSearch),
   );
 }
 
@@ -225,14 +233,14 @@ export async function searchExercisesInFirebase(
  * Filtert Übungen nach Körperteil
  */
 export async function getExercisesByBodyPart(
-  bodyPart: string
+  bodyPart: string,
 ): Promise<ExerciseInfo[]> {
   const allExercises = await getAllExercisesFromFirebase();
 
   if (!bodyPart) return allExercises;
 
   return allExercises.filter(
-    (ex) => ex.bodyPart.toLowerCase() === bodyPart.toLowerCase()
+    (ex) => ex.bodyPart.toLowerCase() === bodyPart.toLowerCase(),
   );
 }
 
@@ -240,12 +248,12 @@ export async function getExercisesByBodyPart(
  * Filtert Übungen nach Equipment
  */
 export async function getExercisesByEquipment(
-  equipment: string
+  equipment: string,
 ): Promise<ExerciseInfo[]> {
   const allExercises = await getAllExercisesFromFirebase();
 
   return allExercises.filter(
-    (ex) => ex.equipment.toLowerCase() === equipment.toLowerCase()
+    (ex) => ex.equipment.toLowerCase() === equipment.toLowerCase(),
   );
 }
 
@@ -253,7 +261,7 @@ export async function getExercisesByEquipment(
  * Filtert Übungen nach Schwierigkeit
  */
 export async function getExercisesByDifficulty(
-  difficulty: "beginner" | "intermediate" | "advanced"
+  difficulty: "beginner" | "intermediate" | "advanced",
 ): Promise<ExerciseInfo[]> {
   const allExercises = await getAllExercisesFromFirebase();
 
@@ -323,21 +331,21 @@ export async function searchAndFilterExercises(options: {
         ex.name.toLowerCase().includes(lower) ||
         ex.targetMuscle.toLowerCase().includes(lower) ||
         ex.bodyPart.toLowerCase().includes(lower) ||
-        ex.equipment.toLowerCase().includes(lower)
+        ex.equipment.toLowerCase().includes(lower),
     );
   }
 
   // Körperteil Filter
   if (bodyPart) {
     results = results.filter(
-      (ex) => ex.bodyPart.toLowerCase() === bodyPart.toLowerCase()
+      (ex) => ex.bodyPart.toLowerCase() === bodyPart.toLowerCase(),
     );
   }
 
   // Equipment Filter
   if (equipment) {
     results = results.filter(
-      (ex) => ex.equipment.toLowerCase() === equipment.toLowerCase()
+      (ex) => ex.equipment.toLowerCase() === equipment.toLowerCase(),
     );
   }
 

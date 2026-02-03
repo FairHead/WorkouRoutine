@@ -6,10 +6,7 @@ export {
     calculateTotalCalories,
     calculateTotalDuration,
     formatDuration,
-    formatDurationWithUnit,
-    getExerciseById,
-    getExercises,
-    getExercisesByCategory
+    formatDurationWithUnit
 } from "./exercise.service";
 
 export {
@@ -33,3 +30,14 @@ export {
     searchExercisesInFirebase
 } from "./firebase.service";
 
+// Kalorienberechnung
+export {
+    calculateCalories,
+    calculateSessionCalories,
+    DEFAULT_PROFILE,
+    estimateEPOC,
+    formatCalories,
+    getCaloriesPerMinute,
+    MET_VALUES,
+    type UserProfile
+} from "./calorie-calculator.service";

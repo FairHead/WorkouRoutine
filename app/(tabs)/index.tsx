@@ -7,6 +7,7 @@ import {
   useSessionStore,
   useSessionsByStatus,
 } from "@/hooks/use-session-store";
+import { useUserStore } from "@/hooks/use-user-store";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
@@ -17,6 +18,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -26,6 +28,7 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const { sessions, createSession } = useSessionStore();
+  const { user } = useUserStore();
   const inProgressSessions = useSessionsByStatus("in-progress");
   const plannedSessions = useSessionsByStatus("planned");
   const completedSessions = useSessionsByStatus("completed");
@@ -54,17 +57,29 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <ThemedView style={styles.header}>
-          <ThemedText
-            type="title"
-            style={[styles.title, { color: colors.text }]}
-          >
-            Meine Sessions
-          </ThemedText>
-          <ThemedText
-            style={[styles.subtitle, { color: colors.textSecondary }]}
-          >
-            {sessions.length} {sessions.length === 1 ? "Session" : "Sessions"}
-          </ThemedText>
+          <View style={styles.headerTop}>
+            <View style={styles.headerTitles}>
+              <ThemedText
+                type="title"
+                style={[styles.title, { color: colors.text }]}
+              >
+                Meine Sessions
+              </ThemedText>
+              <ThemedText
+                style={[styles.subtitle, { color: colors.textSecondary }]}
+              >
+                {sessions.length} {sessions.length === 1 ? "Session" : "Sessions"}
+              </ThemedText>
+            </View>
+            <TouchableOpacity 
+              style={[styles.profileButton, { backgroundColor: colors.accent }]}
+              onPress={() => router.push("/profile" as Href)}
+            >
+              <Text style={styles.profileButtonText}>
+                {(user?.displayName || "B")[0].toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </ThemedView>
 
         {/* Empty State */}
@@ -382,5 +397,25 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontFamily: Fonts.semiBold,
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  headerTitles: {
+    flex: 1,
+  },
+  profileButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profileButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });

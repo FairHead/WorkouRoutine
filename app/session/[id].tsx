@@ -621,6 +621,9 @@ export default function SessionDetailScreen() {
                       sessionExercise.exerciseInfo.name,
                     )
                   }
+                  onUpdate={(updates) =>
+                    updateExerciseInSession(session.id, sessionExercise.id, updates)
+                  }
                   variant="detail"
                 />
               ))}

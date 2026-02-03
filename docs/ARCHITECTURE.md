@@ -57,15 +57,18 @@ components/
 ├── carousel-3d.tsx          # 3D-Karussell mit Perspektive
 ├── draggable-list.tsx       # Drag & Drop Liste
 ├── session-card.tsx         # Session-Vorschau Karte
+├── session-grid.tsx         # Session Grid-Ansicht
 ├── session-exercise-card.tsx # Übung in Session-Ansicht
 ├── workout-exercise-card.tsx # Übung im Workout-Modus
 ├── exercise-card.tsx        # Basis-Übungskarte
+├── exercise-card-stack.tsx  # Übungskarten-Stapel
 ├── exercise-search-card.tsx # Übung in Suchansicht
 ├── add-to-session-modal.tsx # Modal zum Hinzufügen
+├── ai-chat-button.tsx       # KI-Assistent Button
+├── haptic-tab.tsx           # Haptisches Tab-Feedback
 ├── themed-text.tsx          # Text mit Theme-Unterstützung
 ├── themed-view.tsx          # View mit Theme-Unterstützung
 └── ui/                      # Basis-UI Komponenten
-    ├── collapsible.tsx
     ├── icon-symbol.tsx
     └── icon-symbol.ios.tsx
 ```
@@ -75,7 +78,7 @@ components/
 ```
 hooks/
 ├── use-session-store.tsx    # Zentrales Session State Management
-├── use-exercises.ts         # Übungsdaten Hook
+├── use-firebase-exercises.ts # Firebase Übungsdaten Hook
 ├── use-color-scheme.ts      # Dark/Light Mode Hook
 ├── use-color-scheme.web.ts  # Web-spezifische Implementierung
 └── use-theme-color.ts       # Theme Farben Hook
@@ -85,15 +88,18 @@ hooks/
 
 ```
 src/
+├── config/
+│   └── firebase.config.ts   # Firebase Konfiguration
 ├── models/
 │   ├── index.ts             # Re-Export aller Models
 │   └── exercise.model.ts    # Exercise, Session, Workout Types
-├── data/
-│   ├── index.ts
-│   ├── exercises.data.ts    # Statische Übungsdaten
-│   └── exercise-database.ts # Übungsdatenbank
 └── services/
-    └── (zukünftige API Services)
+    ├── index.ts             # Service Exports
+    ├── exercise.service.ts  # Workout-Berechnungen
+    ├── firebase.service.ts  # Firebase Datenbankzugriff
+    ├── gemini.service.ts    # Google Gemini KI Integration
+    ├── tenor-gif.service.ts # Tenor GIF API
+    └── workout-generator.service.ts # KI Workout-Generierung
 ```
 
 ## 🔄 State Management

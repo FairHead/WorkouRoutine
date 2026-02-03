@@ -1,13 +1,20 @@
 import { AddToSessionModal } from "@/components/add-to-session-modal";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { getExerciseByIdFromFirebase } from "@/src/services/firebase.service";
 import type { ExerciseInfo } from "@/src/models";
+import { getExerciseByIdFromFirebase } from "@/src/services/firebase.service";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,7 +34,7 @@ export default function ExerciseDetailScreen() {
     if (id) {
       setIsLoading(true);
       setError(null);
-      
+
       getExerciseByIdFromFirebase(id)
         .then((ex) => {
           setExercise(ex);
