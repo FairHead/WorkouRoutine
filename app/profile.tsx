@@ -19,6 +19,14 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useUserStore } from "@/hooks/use-user-store";
 import { Colors } from "@/constants/theme";
+import { 
+  createCalorieProfile, 
+  saveCalorieProfile,
+  getCalorieProfile,
+  type CalorieUserProfile,
+  ACTIVITY_LEVEL_DESCRIPTIONS,
+  type ActivityLevel,
+} from "@/src/services/calories";
 
 export default function ProfileScreen() {
   const { user, updateUser, clearUser, settings, updateSettings } = useUserStore();
@@ -37,6 +45,8 @@ export default function ProfileScreen() {
   });
   
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [calorieProfile, setCalorieProfile] = useState<CalorieUserProfile | null>(null);
+  const [loadingCalories, setLoadingCalories] = useState(false);
 
   // Sync editData when user changes
   useEffect(() => {
@@ -54,6 +64,62 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
+  // Load calorie profile
+  useEffect(() => {
+    loadCalorieProfile();
+  }, [user]);
+
+  const loadCalorieProfile = async () => {
+    try {
+      const profile = await getCalorieProfile();
+      setCalorieProfile(profile);
+    } catch (error) {
+      console.error("Error loading calorie profile:", error);
+    }
+  };
+
+  const syncCalorieProfile = async () => {
+    if (!user?.weightKg || !user?.heightCm || !user?.age || !user?.gender) {
+      Alert.alert(
+        "Fehlende Daten",
+        "Bitte fülle alle Körperdaten aus (Gewicht, Größe, Alter, Geschlecht) um dein Kalorienprofil zu erstellen."
+      );
+      return;
+    }
+
+    // Map activity level - handle "active" by mapping to "very_active"
+    let mappedActivityLevel: ActivityLevel = "sedentary";
+    if (user.activityLevel === "active") {
+      mappedActivityLevel = "very_active";
+    } else if (user.activityLevel && ["sedentary", "light", "moderate", "very_active", "extra_active"].includes(user.activityLevel)) {
+      mappedActivityLevel = user.activityLevel as ActivityLevel;
+    }
+
+    setLoadingCalories(true);
+    try {
+      const profile = createCalorieProfile({
+        sex: user.gender === "male" ? "male" : "female",
+        ageYears: user.age,
+        heightCm: user.heightCm,
+        weightKg: user.weightKg,
+        activityLevel: mappedActivityLevel,
+      });
+
+      await saveCalorieProfile(profile);
+      setCalorieProfile(profile);
+      
+      Alert.alert(
+        "Erfolg! ✅",
+        `Dein Kalorienprofil wurde aktualisiert.\n\nGrundumsatz (BMR): ${Math.round(profile.bmrKcalDay)} kcal/Tag\nGesamtverbrauch (TDEE): ${Math.round(profile.tdeeNoWorkoutKcalDay)} kcal/Tag`
+      );
+    } catch (error) {
+      console.error("Error syncing calorie profile:", error);
+      Alert.alert("Fehler", "Kalorienprofil konnte nicht gespeichert werden.");
+    } finally {
+      setLoadingCalories(false);
+    }
+  };
+
   const handleSave = () => {
     updateUser({
       displayName: editData.displayName.trim() || "Benutzer",
@@ -66,6 +132,13 @@ export default function ProfileScreen() {
       fitnessGoal: editData.fitnessGoal,
     });
     setIsEditing(false);
+    
+    // Auto-sync calorie profile if all required fields are filled
+    setTimeout(() => {
+      if (editData.weight && editData.height && editData.age && editData.gender) {
+        syncCalorieProfile();
+      }
+    }, 100);
   };
 
   const handleLogout = () => {
@@ -381,6 +454,79 @@ export default function ProfileScreen() {
           </>
         ))}
 
+        {/* Calorie Profile Section */}
+        {calorieProfile && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Kalorienverbrauch</Text>
+              <TouchableOpacity
+                onPress={syncCalorieProfile}
+                disabled={loadingCalories}
+                style={styles.syncButton}
+              >
+                <Ionicons 
+                  name={loadingCalories ? "hourglass-outline" : "sync-outline"} 
+                  size={16} 
+                  color={Colors.dark.accent} 
+                />
+                <Text style={[styles.syncText, { color: Colors.dark.accent }]}>
+                  {loadingCalories ? "Aktualisiere..." : "Neu berechnen"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.sectionContent}>
+              <View style={styles.calorieCard}>
+                <View style={styles.calorieRow}>
+                  <View style={styles.calorieItem}>
+                    <Ionicons name="flame-outline" size={24} color="#ff6b6b" />
+                    <Text style={styles.calorieValue}>
+                      {Math.round(calorieProfile.bmrKcalDay)}
+                    </Text>
+                    <Text style={styles.calorieLabel}>BMR (kcal/Tag)</Text>
+                    <Text style={styles.calorieDescription}>Grundumsatz</Text>
+                  </View>
+                  <View style={styles.calorieItem}>
+                    <Ionicons name="trending-up-outline" size={24} color={Colors.dark.accent} />
+                    <Text style={styles.calorieValue}>
+                      {Math.round(calorieProfile.tdeeNoWorkoutKcalDay)}
+                    </Text>
+                    <Text style={styles.calorieLabel}>TDEE (kcal/Tag)</Text>
+                    <Text style={styles.calorieDescription}>Tagesverbrauch</Text>
+                  </View>
+                </View>
+                <View style={styles.calorieInfo}>
+                  <Ionicons name="information-circle-outline" size={16} color="#888" />
+                  <Text style={styles.calorieInfoText}>
+                    TDEE = Täglicher Kalorienverbrauch ohne Workouts. 
+                    Workout-Kalorien werden separat getrackt.
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {!calorieProfile && user?.weightKg && user?.heightCm && user?.age && user?.gender && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Kalorienverbrauch</Text>
+            <View style={styles.sectionContent}>
+              <TouchableOpacity
+                style={styles.setupCalorieButton}
+                onPress={syncCalorieProfile}
+                disabled={loadingCalories}
+              >
+                <Ionicons name="calculator-outline" size={24} color={Colors.dark.accent} />
+                <Text style={[styles.setupCalorieText, { color: Colors.dark.text }]}>
+                  {loadingCalories ? "Berechne..." : "Kalorienprofil erstellen"}
+                </Text>
+                <Text style={styles.setupCalorieHint}>
+                  Berechne deinen täglichen Kalorienverbrauch
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {renderSettings()}
 
         <TouchableOpacity
@@ -672,5 +818,78 @@ const styles = StyleSheet.create({
   modalConfirmText: {
     color: "#fff",
     fontWeight: "600",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  syncButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: "#1a1a1a",
+  },
+  syncText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  calorieCard: {
+    padding: 20,
+  },
+  calorieRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 16,
+  },
+  calorieItem: {
+    alignItems: "center",
+    gap: 8,
+  },
+  calorieValue: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: Colors.dark.text,
+  },
+  calorieLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#888",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  calorieDescription: {
+    fontSize: 11,
+    color: "#666",
+  },
+  calorieInfo: {
+    flexDirection: "row",
+    gap: 8,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#222",
+  },
+  calorieInfoText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#888",
+    lineHeight: 18,
+  },
+  setupCalorieButton: {
+    padding: 20,
+    alignItems: "center",
+    gap: 8,
+  },
+  setupCalorieText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  setupCalorieHint: {
+    fontSize: 13,
+    color: "#888",
   },
 });

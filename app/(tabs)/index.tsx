@@ -1,6 +1,7 @@
 import { SessionGrid } from "@/components/session-grid";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { DailyCalorieOverview } from "@/components/daily-calorie-overview";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
@@ -81,6 +82,9 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </ThemedView>
+
+        {/* Daily Calorie Overview */}
+        <DailyCalorieOverview onPress={() => router.push("/profile" as Href)} />
 
         {/* Empty State */}
         {!hasAnySessions && (
