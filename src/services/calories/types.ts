@@ -109,6 +109,61 @@ export interface WorkoutSession {
 }
 
 /**
+ * Einzelne Übungs-Kalorienverbrennung
+ */
+export interface ExerciseCalorieBurn {
+  /** Eindeutige ID */
+  id: string;
+  
+  /** Datum (YYYY-MM-DD, local date) */
+  date: string;
+  
+  /** Zeitpunkt der Übung (ISO timestamp) */
+  completedAt: string;
+  
+  /** Name der Übung */
+  exerciseName: string;
+  
+  /** Körperteil */
+  bodyPart: string;
+  
+  /** Verbrannte Kalorien */
+  calories: number;
+  
+  /** Sets abgeschlossen */
+  sets: number;
+  
+  /** Reps pro Set (oder 0 für Timer-Modus) */
+  reps: number;
+  
+  /** Gewicht in kg */
+  weight: number;
+  
+  /** Session ID (optional, falls Teil einer Session) */
+  sessionId?: string;
+}
+
+/**
+ * Konsumierte Kalorien (Mahlzeit)
+ */
+export interface ConsumedCalories {
+  /** Eindeutige ID */
+  id: string;
+  
+  /** Datum (YYYY-MM-DD, local date) */
+  date: string;
+  
+  /** Zeitpunkt (ISO timestamp) */
+  consumedAt: string;
+  
+  /** Beschreibung (z.B. "Mittagessen", "Snack") */
+  description: string;
+  
+  /** Kalorien */
+  calories: number;
+}
+
+/**
  * Tägliche Kalorienübersicht
  */
 export interface DailyBurn {
@@ -121,11 +176,26 @@ export interface DailyBurn {
   /** Kalorien aus Workouts */
   workoutCalories: number;
   
-  /** Gesamtverbrauch (TDEE + Workouts) */
+  /** Kalorien aus einzelnen Übungen (außerhalb von Sessions) */
+  exerciseCalories: number;
+  
+  /** Konsumierte Kalorien (Essen) */
+  consumedCalories: number;
+  
+  /** Gesamtverbrauch (TDEE + Workouts + Exercises) */
   totalBurn: number;
+  
+  /** Netto-Kalorien (Verbrauch - Konsum) */
+  netCalories: number;
   
   /** Sessions an diesem Tag */
   sessions: WorkoutSession[];
+  
+  /** Einzelne Übungs-Verbrennungen */
+  exerciseBurns: ExerciseCalorieBurn[];
+  
+  /** Konsumierte Mahlzeiten */
+  consumedItems: ConsumedCalories[];
 }
 
 /**

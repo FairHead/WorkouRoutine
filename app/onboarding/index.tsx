@@ -1,8 +1,8 @@
 /**
- * Onboarding/Registrierungsseite
+ * Onboarding/Profil-Setup Seite
  * 
- * Wird beim ersten App-Start angezeigt.
- * Erfasst Benutzerdaten und optionale Körperdaten.
+ * Wird nach erfolgreicher Registrierung angezeigt.
+ * Erfasst Körperdaten und Fitness-Ziele für personalisierte Erfahrung.
  */
 
 import React, { useState } from "react";
@@ -19,35 +19,41 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useUserStore } from "@/hooks/use-user-store";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+import { useUserStore } from "@/src/stores/user.store";
 import { Colors } from "@/constants/theme";
+import {
+  createCalorieProfile,
+  saveCalorieProfile,
+  type ActivityLevel,
+} from "@/src/services/calories";
 
 const { width } = Dimensions.get("window");
 
 /**
- * Onboarding Screen mit Schritt-für-Schritt Registrierung
+ * Onboarding Screen - Profil-Setup nach Registrierung
  */
 export default function OnboardingScreen() {
-  const { createUser } = useUserStore();
+  const { user, createUser } = useUserStore();
   
   // Form State
   const [step, setStep] = useState(1);
-  const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
   
-  // Körperdaten (optional)
+  // Körperdaten
   const [gender, setGender] = useState<"male" | "female" | "other" | undefined>();
   const [weight, setWeight] = useState("");
   const [height, setHeight] = useState("");
   const [age, setAge] = useState("");
   
-  // Fitness-Ziele (optional)
+  // Fitness-Ziele
   const [activityLevel, setActivityLevel] = useState<"sedentary" | "light" | "moderate" | "active" | "very_active" | undefined>();
   const [fitnessGoal, setFitnessGoal] = useState<"lose_weight" | "maintain" | "build_muscle" | "improve_fitness" | undefined>();
 
-  const totalSteps = 3;
+  const totalSteps = 2;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
@@ -55,16 +61,36 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (step > 1) {
       setStep(step - 1);
     }
   };
 
-  const handleComplete = () => {
+  /**
+   * Mappt UserStore ActivityLevel auf CalorieService ActivityLevel
+   */
+  const mapActivityLevel = (
+    level: "sedentary" | "light" | "moderate" | "active" | "very_active" | undefined
+  ): ActivityLevel => {
+    switch (level) {
+      case "sedentary": return "sedentary";
+      case "light": return "light";
+      case "moderate": return "moderate";
+      case "active": return "very_active";
+      case "very_active": return "extra_active";
+      default: return "light"; // Default fallback
+    }
+  };
+
+  const handleComplete = async () => {
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    
+    // 1. UserStore aktualisieren
     createUser({
-      displayName: displayName.trim() || "Benutzer",
-      email: email.trim() || undefined,
+      displayName: user?.displayName || "Benutzer",
+      email: user?.email,
       gender,
       weightKg: weight ? parseFloat(weight) : undefined,
       heightCm: height ? parseFloat(height) : undefined,
@@ -73,21 +99,40 @@ export default function OnboardingScreen() {
       fitnessGoal,
     });
 
+    // 2. CalorieProfile erstellen wenn alle Daten vorhanden
+    const weightNum = weight ? parseFloat(weight) : null;
+    const heightNum = height ? parseFloat(height) : null;
+    const ageNum = age ? parseInt(age, 10) : null;
+    
+    if (weightNum && heightNum && ageNum && gender && gender !== "other" && activityLevel) {
+      try {
+        const calorieProfile = createCalorieProfile({
+          sex: gender as "male" | "female",
+          ageYears: ageNum,
+          heightCm: heightNum,
+          weightKg: weightNum,
+          activityLevel: mapActivityLevel(activityLevel),
+        });
+        await saveCalorieProfile(calorieProfile);
+        console.log("✅ CalorieProfile erstellt:", {
+          bmr: Math.round(calorieProfile.bmrKcalDay),
+          tdee: Math.round(calorieProfile.tdeeNoWorkoutKcalDay),
+        });
+      } catch (error) {
+        console.error("Fehler beim Erstellen des CalorieProfile:", error);
+      }
+    }
+
     router.replace("/(tabs)");
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     createUser({
-      displayName: "Benutzer",
+      displayName: user?.displayName || "Benutzer",
+      email: user?.email,
     });
     router.replace("/(tabs)");
-  };
-
-  const canProceed = () => {
-    if (step === 1) {
-      return displayName.trim().length > 0;
-    }
-    return true; // Andere Schritte sind optional
   };
 
   const renderProgressBar = () => (
@@ -105,45 +150,16 @@ export default function OnboardingScreen() {
   );
 
   const renderStep1 = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Willkommen! 👋</Text>
-      <Text style={styles.stepSubtitle}>
-        Erstelle dein Profil, um loszulegen.
-      </Text>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Name *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Dein Name"
-          placeholderTextColor="#888"
-          value={displayName}
-          onChangeText={setDisplayName}
-          autoCapitalize="words"
-          autoFocus
-        />
+    <Animated.View 
+      entering={FadeInDown.delay(100).duration(500)}
+      style={styles.stepContent}
+    >
+      <View style={styles.welcomeIcon}>
+        <Ionicons name="body-outline" size={48} color={Colors.dark.accent} />
       </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>E-Mail (optional)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="deine@email.de"
-          placeholderTextColor="#888"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
-    </View>
-  );
-
-  const renderStep2 = () => (
-    <View style={styles.stepContent}>
       <Text style={styles.stepTitle}>Körperdaten 📊</Text>
       <Text style={styles.stepSubtitle}>
-        Für genauere Kalorienberechnungen. Du kannst alles überspringen.
+        Diese Daten helfen uns, deine Kalorienverbrennung genau zu berechnen. Du kannst sie später jederzeit anpassen.
       </Text>
 
       <View style={styles.inputGroup}>
@@ -223,7 +239,7 @@ export default function OnboardingScreen() {
           <TextInput
             style={styles.input}
             placeholder="z.B. 75"
-            placeholderTextColor="#888"
+            placeholderTextColor="#666"
             value={weight}
             onChangeText={setWeight}
             keyboardType="decimal-pad"
@@ -235,7 +251,7 @@ export default function OnboardingScreen() {
           <TextInput
             style={styles.input}
             placeholder="z.B. 175"
-            placeholderTextColor="#888"
+            placeholderTextColor="#666"
             value={height}
             onChangeText={setHeight}
             keyboardType="number-pad"
@@ -248,31 +264,37 @@ export default function OnboardingScreen() {
         <TextInput
           style={styles.input}
           placeholder="z.B. 28"
-          placeholderTextColor="#888"
+          placeholderTextColor="#666"
           value={age}
           onChangeText={setAge}
           keyboardType="number-pad"
         />
       </View>
-    </View>
+    </Animated.View>
   );
 
-  const renderStep3 = () => (
-    <View style={styles.stepContent}>
+  const renderStep2 = () => (
+    <Animated.View 
+      entering={FadeInDown.delay(100).duration(500)}
+      style={styles.stepContent}
+    >
+      <View style={styles.welcomeIcon}>
+        <Ionicons name="trophy-outline" size={48} color={Colors.dark.accent} />
+      </View>
       <Text style={styles.stepTitle}>Deine Ziele 🎯</Text>
       <Text style={styles.stepSubtitle}>
-        Hilft uns, dein Training zu personalisieren.
+        Hilft uns, dein Training zu personalisieren und passende Empfehlungen zu geben.
       </Text>
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Aktivitätslevel</Text>
         <View style={styles.optionList}>
           {[
-            { value: "sedentary", label: "Kaum aktiv", icon: "bed-outline" },
-            { value: "light", label: "Leicht aktiv", icon: "walk-outline" },
-            { value: "moderate", label: "Moderat aktiv", icon: "bicycle-outline" },
-            { value: "active", label: "Sehr aktiv", icon: "fitness-outline" },
-            { value: "very_active", label: "Extrem aktiv", icon: "flame-outline" },
+            { value: "sedentary", label: "Kaum aktiv", icon: "bed-outline", desc: "Bürojob, wenig Bewegung" },
+            { value: "light", label: "Leicht aktiv", icon: "walk-outline", desc: "Gelegentliche Spaziergänge" },
+            { value: "moderate", label: "Moderat aktiv", icon: "bicycle-outline", desc: "Regelmäßige Bewegung" },
+            { value: "active", label: "Sehr aktiv", icon: "fitness-outline", desc: "Tägliches Training" },
+            { value: "very_active", label: "Extrem aktiv", icon: "flame-outline", desc: "Intensives Training, körperliche Arbeit" },
           ].map((option) => (
             <TouchableOpacity
               key={option.value}
@@ -284,17 +306,27 @@ export default function OnboardingScreen() {
             >
               <Ionicons
                 name={option.icon as any}
-                size={20}
+                size={22}
                 color={activityLevel === option.value ? "#fff" : Colors.dark.text}
               />
-              <Text
-                style={[
-                  styles.optionButtonText,
-                  activityLevel === option.value && styles.optionButtonTextActive,
-                ]}
-              >
-                {option.label}
-              </Text>
+              <View style={styles.optionTextContainer}>
+                <Text
+                  style={[
+                    styles.optionButtonText,
+                    activityLevel === option.value && styles.optionButtonTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                <Text
+                  style={[
+                    styles.optionDesc,
+                    activityLevel === option.value && styles.optionDescActive,
+                  ]}
+                >
+                  {option.desc}
+                </Text>
+              </View>
             </TouchableOpacity>
           ))}
         </View>
@@ -302,7 +334,7 @@ export default function OnboardingScreen() {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Fitnessziel</Text>
-        <View style={styles.optionList}>
+        <View style={styles.goalGrid}>
           {[
             { value: "lose_weight", label: "Abnehmen", icon: "trending-down-outline" },
             { value: "maintain", label: "Gewicht halten", icon: "swap-horizontal-outline" },
@@ -312,20 +344,20 @@ export default function OnboardingScreen() {
             <TouchableOpacity
               key={option.value}
               style={[
-                styles.optionButton,
-                fitnessGoal === option.value && styles.optionButtonActive,
+                styles.goalButton,
+                fitnessGoal === option.value && styles.goalButtonActive,
               ]}
               onPress={() => setFitnessGoal(option.value as any)}
             >
               <Ionicons
                 name={option.icon as any}
-                size={20}
+                size={28}
                 color={fitnessGoal === option.value ? "#fff" : Colors.dark.text}
               />
               <Text
                 style={[
-                  styles.optionButtonText,
-                  fitnessGoal === option.value && styles.optionButtonTextActive,
+                  styles.goalButtonText,
+                  fitnessGoal === option.value && styles.goalButtonTextActive,
                 ]}
               >
                 {option.label}
@@ -334,7 +366,7 @@ export default function OnboardingScreen() {
           ))}
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 
   return (
@@ -347,11 +379,23 @@ export default function OnboardingScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Welcome Header */}
+        <Animated.View 
+          entering={FadeInUp.duration(600)}
+          style={styles.welcomeHeader}
+        >
+          <Text style={styles.welcomeTitle}>
+            Hallo{user?.displayName ? `, ${user.displayName}` : ""}! 👋
+          </Text>
+          <Text style={styles.welcomeSubtitle}>
+            Lass uns dein Profil vervollständigen.
+          </Text>
+        </Animated.View>
+
         {renderProgressBar()}
 
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
 
         <View style={styles.buttonContainer}>
           {step > 1 && (
@@ -374,12 +418,9 @@ export default function OnboardingScreen() {
           )}
 
           <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !canProceed() && styles.nextButtonDisabled,
-            ]}
+            style={styles.nextButton}
             onPress={handleNext}
-            disabled={!canProceed()}
+            activeOpacity={0.8}
           >
             <Text style={styles.nextButtonText}>
               {step === totalSteps ? "Fertig" : "Weiter"}
@@ -407,11 +448,34 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
+  welcomeHeader: {
+    marginBottom: 24,
+  },
+  welcomeTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: Colors.dark.text,
+    marginBottom: 4,
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: "#888",
+  },
+  welcomeIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(92, 119, 186, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginBottom: 24,
+  },
   progressContainer: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,
-    marginBottom: 40,
+    marginBottom: 32,
   },
   progressDot: {
     width: 10,
@@ -427,15 +491,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
     color: Colors.dark.text,
     marginBottom: 8,
+    textAlign: "center",
   },
   stepSubtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#888",
-    marginBottom: 32,
+    marginBottom: 28,
+    textAlign: "center",
+    lineHeight: 22,
   },
   inputGroup: {
     marginBottom: 20,
@@ -443,7 +510,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     color: "#888",
-    marginBottom: 8,
+    marginBottom: 10,
     fontWeight: "500",
   },
   input: {
@@ -485,12 +552,12 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   optionList: {
-    gap: 8,
+    gap: 10,
   },
   optionButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
     backgroundColor: "#1a1a1a",
     borderRadius: 12,
     padding: 14,
@@ -501,13 +568,52 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.accent,
     borderColor: Colors.dark.accent,
   },
+  optionTextContainer: {
+    flex: 1,
+  },
   optionButtonText: {
     color: Colors.dark.text,
     fontSize: 15,
+    fontWeight: "500",
   },
   optionButtonTextActive: {
     color: "#fff",
+  },
+  optionDesc: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
+  },
+  optionDescActive: {
+    color: "rgba(255,255,255,0.7)",
+  },
+  goalGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  goalButton: {
+    width: (width - 60) / 2,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  goalButtonActive: {
+    backgroundColor: Colors.dark.accent,
+    borderColor: Colors.dark.accent,
+  },
+  goalButtonText: {
+    color: Colors.dark.text,
+    fontSize: 13,
     fontWeight: "500",
+    textAlign: "center",
+  },
+  goalButtonTextActive: {
+    color: "#fff",
   },
   buttonContainer: {
     flexDirection: "row",
@@ -544,9 +650,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     marginLeft: "auto",
-  },
-  nextButtonDisabled: {
-    opacity: 0.5,
+    shadowColor: Colors.dark.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   nextButtonText: {
     color: "#fff",

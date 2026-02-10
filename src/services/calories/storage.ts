@@ -8,12 +8,14 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { CalorieUserProfile, WorkoutSession, DailyBurn } from "./types";
+import type { CalorieUserProfile, WorkoutSession, DailyBurn, ExerciseCalorieBurn, ConsumedCalories } from "./types";
 
 // Storage Keys
 const STORAGE_KEYS = {
   CALORIE_PROFILE: "calorie-profile",
   WORKOUT_SESSIONS: "workout-sessions",
+  EXERCISE_BURNS: "exercise-burns",
+  CONSUMED_CALORIES: "consumed-calories",
 } as const;
 
 /**
@@ -148,15 +150,37 @@ export async function getDailyBurn(date: string): Promise<DailyBurn> {
       0
     );
     
+    // Lade Übungs-Kalorien für diesen Tag
+    const exerciseBurns = await getExerciseBurns(date);
+    const exerciseCalories = exerciseBurns.reduce(
+      (sum, burn) => sum + burn.calories,
+      0
+    );
+    
+    // Lade konsumierte Kalorien für diesen Tag
+    const consumedItems = await getConsumedCalories(date);
+    const consumedCalories = consumedItems.reduce(
+      (sum, item) => sum + item.calories,
+      0
+    );
+    
     // Berechne Gesamtverbrauch
-    const totalBurn = tdeeNoWorkout + workoutCalories;
+    const totalBurn = tdeeNoWorkout + workoutCalories + exerciseCalories;
+    
+    // Berechne Netto-Kalorien (Verbrauch - Konsum)
+    const netCalories = totalBurn - consumedCalories;
     
     return {
       date,
       tdeeNoWorkout,
       workoutCalories,
+      exerciseCalories,
+      consumedCalories,
       totalBurn,
+      netCalories,
       sessions,
+      exerciseBurns,
+      consumedItems,
     };
   } catch (error) {
     console.error("Error calculating daily burn:", error);
@@ -164,15 +188,162 @@ export async function getDailyBurn(date: string): Promise<DailyBurn> {
   }
 }
 
+// ============================================
+// Exercise Burns (Einzelne Übungs-Kalorien)
+// ============================================
+
 /**
- * Löscht alle Workout-Sessions
- * (für Testing oder Reset)
+ * Speichert eine Übungs-Kalorienverbrennung
  */
-export async function clearAllWorkoutSessions(): Promise<void> {
+export async function saveExerciseBurn(
+  burn: ExerciseCalorieBurn
+): Promise<void> {
   try {
-    await AsyncStorage.removeItem(STORAGE_KEYS.WORKOUT_SESSIONS);
+    const burns = await getAllExerciseBurns();
+    burns.push(burn);
+    burns.sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+    
+    const json = JSON.stringify(burns);
+    await AsyncStorage.setItem(STORAGE_KEYS.EXERCISE_BURNS, json);
   } catch (error) {
-    console.error("Error clearing workout sessions:", error);
-    throw new Error("Fehler beim Löschen aller Workout-Sessions");
+    console.error("Error saving exercise burn:", error);
+    throw new Error("Fehler beim Speichern der Übungs-Kalorien");
+  }
+}
+
+/**
+ * Lädt alle Übungs-Verbrennungen
+ */
+async function getAllExerciseBurns(): Promise<ExerciseCalorieBurn[]> {
+  try {
+    const json = await AsyncStorage.getItem(STORAGE_KEYS.EXERCISE_BURNS);
+    if (!json) return [];
+    return JSON.parse(json) as ExerciseCalorieBurn[];
+  } catch (error) {
+    console.error("Error loading exercise burns:", error);
+    return [];
+  }
+}
+
+/**
+ * Lädt Übungs-Verbrennungen für ein Datum
+ */
+export async function getExerciseBurns(
+  date: string
+): Promise<ExerciseCalorieBurn[]> {
+  try {
+    const burns = await getAllExerciseBurns();
+    return burns.filter((b) => b.date === date);
+  } catch (error) {
+    console.error("Error loading exercise burns:", error);
+    return [];
+  }
+}
+
+/**
+ * Löscht eine Übungs-Verbrennung
+ */
+export async function deleteExerciseBurn(burnId: string): Promise<void> {
+  try {
+    const burns = await getAllExerciseBurns();
+    const filtered = burns.filter((b) => b.id !== burnId);
+    
+    const json = JSON.stringify(filtered);
+    await AsyncStorage.setItem(STORAGE_KEYS.EXERCISE_BURNS, json);
+  } catch (error) {
+    console.error("Error deleting exercise burn:", error);
+    throw new Error("Fehler beim Löschen der Übungs-Kalorien");
+  }
+}
+
+/**
+ * Löscht alle Übungs-Verbrennungen
+ */
+export async function clearAllExerciseBurns(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEYS.EXERCISE_BURNS);
+  } catch (error) {
+    console.error("Error clearing exercise burns:", error);
+    throw new Error("Fehler beim Löschen aller Übungs-Kalorien");
+  }
+}
+
+// ============================================
+// Consumed Calories (Konsumierte Kalorien)
+// ============================================
+
+/**
+ * Speichert konsumierte Kalorien (Mahlzeit)
+ */
+export async function saveConsumedCalories(
+  consumed: ConsumedCalories
+): Promise<void> {
+  try {
+    const items = await getAllConsumedCalories();
+    items.push(consumed);
+    items.sort((a, b) => b.consumedAt.localeCompare(a.consumedAt));
+    
+    const json = JSON.stringify(items);
+    await AsyncStorage.setItem(STORAGE_KEYS.CONSUMED_CALORIES, json);
+  } catch (error) {
+    console.error("Error saving consumed calories:", error);
+    throw new Error("Fehler beim Speichern der konsumierten Kalorien");
+  }
+}
+
+/**
+ * Lädt alle konsumierten Kalorien
+ */
+async function getAllConsumedCalories(): Promise<ConsumedCalories[]> {
+  try {
+    const json = await AsyncStorage.getItem(STORAGE_KEYS.CONSUMED_CALORIES);
+    if (!json) return [];
+    return JSON.parse(json) as ConsumedCalories[];
+  } catch (error) {
+    console.error("Error loading consumed calories:", error);
+    return [];
+  }
+}
+
+/**
+ * Lädt konsumierte Kalorien für ein Datum
+ */
+export async function getConsumedCalories(
+  date: string
+): Promise<ConsumedCalories[]> {
+  try {
+    const items = await getAllConsumedCalories();
+    return items.filter((c) => c.date === date);
+  } catch (error) {
+    console.error("Error loading consumed calories:", error);
+    return [];
+  }
+}
+
+/**
+ * Löscht konsumierte Kalorien
+ */
+export async function deleteConsumedCalories(consumedId: string): Promise<void> {
+  try {
+    const items = await getAllConsumedCalories();
+    const filtered = items.filter((c) => c.id !== consumedId);
+    
+    const json = JSON.stringify(filtered);
+    await AsyncStorage.setItem(STORAGE_KEYS.CONSUMED_CALORIES, json);
+  } catch (error) {
+    console.error("Error deleting consumed calories:", error);
+    throw new Error("Fehler beim Löschen der konsumierten Kalorien");
+  }
+}
+
+/**
+ * Löscht alle konsumierten Kalorien
+ */
+export async function clearAllConsumedCalories(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEYS.CONSUMED_CALORIES);
+  } catch (error) {
+    console.error("Error clearing consumed calories:", error);
+    throw new Error("Fehler beim Löschen aller konsumierten Kalorien");
   }
 }

@@ -19,6 +19,8 @@ export type {
   CalorieUserProfile,
   WorkoutSession,
   DailyBurn,
+  ExerciseCalorieBurn,
+  ConsumedCalories,
 } from "./types";
 
 export { VALIDATION_LIMITS } from "./types";
@@ -67,4 +69,14 @@ export {
   deleteWorkoutSession,
   getDailyBurn,
   clearAllWorkoutSessions,
+  // Exercise Burns
+  saveExerciseBurn,
+  getExerciseBurns,
+  deleteExerciseBurn,
+  clearAllExerciseBurns,
+  // Consumed Calories
+  saveConsumedCalories,
+  getConsumedCalories,
+  deleteConsumedCalories,
+  clearAllConsumedCalories,
 } from "./storage";

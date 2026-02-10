@@ -9,16 +9,16 @@ Du bist ein spezialisierter Entwicklungsassistent für die **WorkoutRoutine** Ap
 
 ## 🎯 Projekt-Kontext
 
-| Technologie     | Version  | Verwendung               |
-| --------------- | -------- | ------------------------ |
-| React Native    | 0.81.5   | Framework                |
-| Expo            | ~54.0.32 | Build & Development      |
-| TypeScript      | ~5.9.2   | Typsicherheit            |
-| Firebase        | ^12.8.0  | Auth, Firestore, Storage |
-| Zustand         | ^5.0.11  | State Management         |
-| Reanimated      | ~4.1.1   | Animationen              |
-| Gesture Handler | ~2.28.0  | Touch & Drag             |
-| Expo Router     | ~6.0.22  | File-based Navigation    |
+| Technologie | Version | Verwendung |
+|------------|---------|------------|
+| React Native | 0.81.5 | Framework |
+| Expo | ~54.0.32 | Build & Development |
+| TypeScript | ~5.9.2 | Typsicherheit |
+| Firebase | ^12.8.0 | Auth, Firestore, Storage |
+| Zustand | ^5.0.11 | State Management |
+| Reanimated | ~4.1.1 | Animationen |
+| Gesture Handler | ~2.28.0 | Touch & Drag |
+| Expo Router | ~6.0.22 | File-based Navigation |
 
 ---
 
@@ -67,18 +67,16 @@ src/
 ## 🔧 Entwicklungs-Prinzipien
 
 ### 1. Komponenten-Architektur
-
 - **Funktionale Komponenten** mit Hooks – keine Klassen
 - **TypeScript Interfaces** für alle Props und State
 - **Modularer Aufbau** – eine Komponente pro Datei
 - Kleine, fokussierte Komponenten (Single Responsibility)
 
 ### 2. State Management
-
 ```typescript
 // ✅ RICHTIG: Zustand Store verwenden
-import { useSessionStore } from "@/src/stores/session.store";
-import { useUserStore } from "@/src/stores/user.store";
+import { useSessionStore } from '@/src/stores/session.store';
+import { useUserStore } from '@/src/stores/user.store';
 
 const { sessions, createSession } = useSessionStore();
 const { user, updateProfile } = useUserStore();
@@ -88,62 +86,54 @@ const [sessions, setSessions] = useState([]);
 ```
 
 ### 3. Navigation (Expo Router)
-
 ```typescript
 // ✅ RICHTIG: Typed Routes mit absoluten Pfaden
-router.push("/session/123");
-router.push({ pathname: "/workout/[id]", params: { id } });
+router.push('/session/123');
+router.push({ pathname: '/workout/[id]', params: { id } });
 
 // ❌ FALSCH: Relative Pfade
-router.push("./login");
+router.push('./login');
 ```
 
 ### 4. Animationen
-
 ```typescript
 // ✅ RICHTIG: Reanimated für performante Animationen
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring 
+} from 'react-native-reanimated';
 
 const scale = useSharedValue(1);
 const animatedStyle = useAnimatedStyle(() => ({
-  transform: [{ scale: withSpring(scale.value) }],
+  transform: [{ scale: withSpring(scale.value) }]
 }));
 
 // ❌ FALSCH: React Native Animated API
-import { Animated } from "react-native";
+import { Animated } from 'react-native';
 ```
 
 ### 5. Gesture Handling
-
 ```typescript
 // ✅ RICHTIG: Gesture Handler für Touch-Events
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 
 const panGesture = Gesture.Pan()
-  .onUpdate((e) => {
-    translateY.value = e.translationY;
-  })
-  .onEnd(() => {
-    /* ... */
-  });
+  .onUpdate((e) => { translateY.value = e.translationY; })
+  .onEnd(() => { /* ... */ });
 ```
 
 ### 6. Theming
-
 ```typescript
 // ✅ RICHTIG: Theme-Farben aus constants/theme.ts
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const colorScheme = useColorScheme();
-const colors = Colors[colorScheme ?? "light"];
+const colors = Colors[colorScheme ?? 'light'];
 
 // Oder themed components:
-import { ThemedText, ThemedView } from "@/components";
+import { ThemedText, ThemedView } from '@/components';
 ```
 
 ---
@@ -151,7 +141,6 @@ import { ThemedText, ThemedView } from "@/components";
 ## 📊 Datenmodelle
 
 ### Exercise
-
 ```typescript
 interface ExerciseInfo {
   id: string;
@@ -164,35 +153,33 @@ interface ExerciseInfo {
   equipment: string;
   instructions: string[];
   caloriesPerMinute: number;
-  difficulty: "beginner" | "intermediate" | "advanced";
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
   category: ExerciseCategory;
 }
 ```
 
 ### Session
-
 ```typescript
 interface Session {
   id: string;
   name: string;
   description?: string;
   exercises: SessionExercise[];
-  status: "planned" | "in_progress" | "completed";
+  status: 'planned' | 'in_progress' | 'completed';
   createdAt: Date;
   updatedAt: Date;
 }
 ```
 
 ### SessionExercise
-
 ```typescript
 interface SessionExercise {
   id: string;
   exerciseInfo: ExerciseInfo;
-  mode: "reps" | "timer";
+  mode: 'reps' | 'timer';
   sets: number;
   reps: number;
-  duration: number; // Sekunden
+  duration: number;    // Sekunden
   weight: number;
   restBetweenSets: number;
   restAfterExercise: number;
@@ -201,7 +188,6 @@ interface SessionExercise {
 ```
 
 ### User
-
 ```typescript
 interface User {
   uid: string;
@@ -220,40 +206,27 @@ interface User {
 ## 🔥 Firebase Integration
 
 ### Firestore
-
 ```typescript
-import { db } from "@/src/config/firebase.config";
-import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  query,
-  where,
-} from "firebase/firestore";
+import { db } from '@/src/config/firebase.config';
+import { collection, doc, setDoc, getDoc, query, where } from 'firebase/firestore';
 
 // Document speichern
-await setDoc(doc(db, "users", uid), userData, { merge: true });
+await setDoc(doc(db, 'users', uid), userData, { merge: true });
 
 // Query ausführen
-const q = query(collection(db, "exercises"), where("bodyPart", "==", "chest"));
+const q = query(collection(db, 'exercises'), where('bodyPart', '==', 'chest'));
 ```
 
 ### Authentication
-
 ```typescript
-import { auth } from "@/src/config/firebase.config";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
+import { auth } from '@/src/config/firebase.config';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 ```
 
 ### Storage
-
 ```typescript
-import { storage } from "@/src/config/firebase.config";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from '@/src/config/firebase.config';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 ```
 
 ---
@@ -287,7 +260,7 @@ return <FlatList data={exercises} renderItem={renderItem} keyExtractor={item => 
 - **Accessibility** – accessibilityLabel, accessibilityRole
 
 ```typescript
-import * as Haptics from "expo-haptics";
+import * as Haptics from 'expo-haptics';
 
 const handlePress = () => {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -302,17 +275,17 @@ const handlePress = () => {
 Die App integriert KI über Google Gemini:
 
 - **workout-generator.service.ts** – Personalisierte Workout-Generierung
-- **ai.service.ts** – Allgemeine KI-Funktionen
+- **ai.service.ts** – Allgemeine KI-Funktionen  
 - **ai-chat-button.tsx** – Floating Action Button für KI-Chat
 
 ```typescript
-import { generateWorkout } from "@/src/services/workout-generator.service";
+import { generateWorkout } from '@/src/services/workout-generator.service';
 
 const workout = await generateWorkout({
-  goal: "muscle_building",
+  goal: 'muscle_building',
   duration: 45,
-  equipment: ["dumbbells", "bench"],
-  fitnessLevel: "intermediate",
+  equipment: ['dumbbells', 'bench'],
+  fitnessLevel: 'intermediate'
 });
 ```
 
@@ -344,7 +317,6 @@ const workout = await generateWorkout({
 ## ❓ Häufige Patterns
 
 ### Modal mit Bottom Sheet
-
 ```typescript
 import { Modal, TouchableOpacity, View } from 'react-native';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
@@ -357,20 +329,18 @@ import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 ```
 
 ### Firebase Error Handling
-
 ```typescript
 try {
   await firebaseOperation();
 } catch (error: any) {
-  if (error.code === "permission-denied") {
+  if (error.code === 'permission-denied') {
     // Handle permission error
   }
-  console.error("Firebase error:", error.message);
+  console.error('Firebase error:', error.message);
 }
 ```
 
 ### Async Data Loading
-
 ```typescript
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState<string | null>(null);
@@ -378,7 +348,7 @@ const [error, setError] = useState<string | null>(null);
 useEffect(() => {
   loadData()
     .then(setData)
-    .catch((e) => setError(e.message))
+    .catch(e => setError(e.message))
     .finally(() => setLoading(false));
 }, []);
 ```
@@ -399,5 +369,3 @@ Wenn du Code für dieses Projekt schreibst:
 8. ✅ Dokumentiere komplexe Logik mit Kommentaren
 9. ✅ Handle **Errors** mit visuellem User-Feedback
 10. ✅ Optimiere **Performance** mit memo/useCallback/useMemo
-11. ✅ Überprüfe alle neuen Features auf **Responsiveness** und **Accessibility**
-12. ✅ Überprüfe immer Sytnax und ob offene klammern oder Anführungszeichen korrekt geschlossen sind

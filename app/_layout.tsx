@@ -1,7 +1,7 @@
 import { View, ActivityIndicator } from "react-native";
 import { AIChatButton } from "@/components/ai-chat-button";
 import { SessionProvider } from "@/hooks/use-session-store";
-import { useUserStore } from "@/hooks/use-user-store";
+import { useUserStore } from "@/src/stores/user.store";
 import {
     DarkTheme,
     DefaultTheme,
@@ -17,8 +17,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-  const { isLoaded, hasCompletedOnboarding } = useUserStore();
+  const { isLoaded, hasCompletedOnboarding, isAuthenticated } = useUserStore();
   const segments = useSegments();
 
   // Ladebildschirm während Store lädt - aber Slot muss trotzdem rendern!
@@ -40,23 +39,29 @@ function RootLayoutNav() {
   }
 
   const inOnboarding = segments[0] === "onboarding";
+  const inAuth = segments[0] === "auth";
 
-  // Redirect-Logik mit der Redirect-Komponente
-  const needsOnboarding = !hasCompletedOnboarding && !inOnboarding;
-  const needsHome = hasCompletedOnboarding && inOnboarding;
+  // Redirect-Logik:
+  // 1. Nicht authentifiziert → /auth (außer wir sind schon dort)
+  // 2. Authentifiziert aber kein Onboarding → /onboarding
+  // 3. Beides erledigt → /(tabs)
+  const needsAuth = !isAuthenticated && !inAuth;
+  const needsOnboarding = isAuthenticated && !hasCompletedOnboarding && !inOnboarding && !inAuth;
+  const needsHome = isAuthenticated && hasCompletedOnboarding && (inOnboarding || inAuth);
 
   return (
     <>
       <Slot />
       
       {/* Redirect nach Slot-Mount */}
+      {needsAuth && <Redirect href="/auth" />}
       {needsOnboarding && <Redirect href="/onboarding" />}
       {needsHome && <Redirect href="/(tabs)" />}
       
       <StatusBar style="auto" />
 
-      {/* Floating AI Chat Button - nur wenn nicht im Onboarding */}
-      {!inOnboarding && <AIChatButton />}
+      {/* Floating AI Chat Button - nur wenn nicht im Onboarding oder Auth */}
+      {!inOnboarding && !inAuth && <AIChatButton />}
     </>
   );
 }

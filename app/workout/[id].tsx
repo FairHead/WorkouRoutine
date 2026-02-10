@@ -3,12 +3,14 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useSessionStore } from "@/hooks/use-session-store";
 import { useUserStore } from "@/hooks/use-user-store";
 import type { SessionExercise } from "@/src/models";
+import { calculateCalories } from "@/src/services/calorie-calculator.service";
 import { 
   calcWorkoutCalories, 
   calcNetWorkoutCalories,
   createWorkoutSession,
   saveWorkoutSession,
-  getCalorieProfile,
+  saveExerciseBurn,
+  type ExerciseCalorieBurn,
 } from "@/src/services/calories";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -38,7 +40,8 @@ export default function WorkoutPlayerScreen() {
   const router = useRouter();
 
   const { getSession, completeWorkout, cancelWorkout } = useSessionStore();
-  const { user } = useUserStore();
+  const { user, getCalorieProfile } = useUserStore();
+  const userProfile = getCalorieProfile();
   const session = getSession(id ?? "");
 
   // Workout state
@@ -256,7 +259,27 @@ export default function WorkoutPlayerScreen() {
     const newSetIndex = currentSetIndex + 1;
 
     if (newSetIndex >= currentExercise.sets) {
-      // All sets for this exercise complete
+      // All sets for this exercise complete - Kalorien speichern!
+      const exerciseCalories = calculateCalories(currentExercise, userProfile);
+      const now = new Date();
+      const exerciseBurn: ExerciseCalorieBurn = {
+        id: `burn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        date: now.toISOString().split("T")[0],
+        completedAt: now.toISOString(),
+        exerciseName: currentExercise.exerciseInfo.name,
+        bodyPart: currentExercise.exerciseInfo.bodyPart,
+        calories: exerciseCalories,
+        sets: currentExercise.sets,
+        reps: currentExercise.reps,
+        weight: currentExercise.weight,
+        sessionId: session.id,
+      };
+      
+      // Speichere Übungs-Kalorien asynchron
+      saveExerciseBurn(exerciseBurn).catch((error) => {
+        console.error("Fehler beim Speichern der Übungs-Kalorien:", error);
+      });
+
       const nextExerciseIndex = currentExerciseIndex + 1;
 
       if (nextExerciseIndex >= session.exercises.length) {
@@ -292,7 +315,7 @@ export default function WorkoutPlayerScreen() {
       setRestTimeRemaining(restTime);
       setWorkoutState("rest");
     }
-  }, [session, currentExercise, currentSetIndex, currentExerciseIndex]);
+  }, [session, currentExercise, currentSetIndex, currentExerciseIndex, userProfile]);
 
   // Effect to handle timer completion
   useEffect(() => {

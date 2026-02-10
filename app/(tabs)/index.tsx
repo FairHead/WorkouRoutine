@@ -1,14 +1,12 @@
 import { SessionGrid } from "@/components/session-grid";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { DailyCalorieOverview } from "@/components/daily-calorie-overview";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   useSessionStore,
   useSessionsByStatus,
 } from "@/hooks/use-session-store";
-import { useUserStore } from "@/hooks/use-user-store";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
@@ -19,17 +17,17 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const { sessions, createSession } = useSessionStore();
-  const { user } = useUserStore();
   const inProgressSessions = useSessionsByStatus("in-progress");
   const plannedSessions = useSessionsByStatus("planned");
   const completedSessions = useSessionsByStatus("completed");
@@ -72,19 +70,8 @@ export default function HomeScreen() {
                 {sessions.length} {sessions.length === 1 ? "Session" : "Sessions"}
               </ThemedText>
             </View>
-            <TouchableOpacity 
-              style={[styles.profileButton, { backgroundColor: colors.accent }]}
-              onPress={() => router.push("/profile" as Href)}
-            >
-              <Text style={styles.profileButtonText}>
-                {(user?.displayName || "B")[0].toUpperCase()}
-              </Text>
-            </TouchableOpacity>
           </View>
         </ThemedView>
-
-        {/* Daily Calorie Overview */}
-        <DailyCalorieOverview onPress={() => router.push("/profile" as Href)} />
 
         {/* Empty State */}
         {!hasAnySessions && (
@@ -166,7 +153,10 @@ export default function HomeScreen() {
       {/* FAB - Create Session */}
       {hasAnySessions && (
         <Pressable
-          style={[styles.fab, { backgroundColor: colors.accent }]}
+          style={[
+            styles.fab,
+            { backgroundColor: colors.accent, bottom: 20 },
+          ]}
           onPress={() => setShowCreateModal(true)}
         >
           <Ionicons name="add" size={28} color="#fff" />
@@ -338,8 +328,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    right: 20,
-    bottom: 100,
+    right: 16,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -409,17 +398,5 @@ const styles = StyleSheet.create({
   },
   headerTitles: {
     flex: 1,
-  },
-  profileButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
   },
 });

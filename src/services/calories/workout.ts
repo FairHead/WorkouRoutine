@@ -7,7 +7,7 @@
  */
 
 import { calcBmr } from "./bmr";
-import type { CalorieUserProfile } from "./types";
+import type { CalorieUserProfile, WorkoutType, WorkoutSession } from "./types";
 
 /**
  * Berechnet Workout-Kalorien (Brutto) basierend auf MET-Wert
@@ -87,13 +87,13 @@ export function createWorkoutSession(
     endTime: string;
     durationMinutes: number;
     source: "manual" | "timer";
-    workoutType?: string;
+    workoutType?: WorkoutType;
     intensity?: string;
   },
   profile: CalorieUserProfile,
   met: number,
   calculateNet: boolean = false
-) {
+): WorkoutSession {
   // Brutto-Kalorien berechnen
   const calories = calcWorkoutCalories(
     profile.weightKg,
