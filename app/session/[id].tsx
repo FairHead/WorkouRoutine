@@ -5,7 +5,10 @@ import { WorkoutExerciseCard } from "@/components/workout-exercise-card";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useSessionStore } from "@/hooks/use-session-store";
+import { useUserStore } from "@/hooks/use-user-store";
 import type { SessionExercise } from "@/src/models";
+import { calculateCalories } from "@/src/services/calorie-calculator.service";
+import { saveExerciseBurn, type ExerciseCalorieBurn } from "@/src/services/calories";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -41,6 +44,10 @@ export default function SessionDetailScreen() {
     cancelWorkout,
     setActiveSession,
   } = useSessionStore();
+
+  // Hole Kalorienberechnungs-Profil aus dem User Store
+  const { getCalorieProfile } = useUserStore();
+  const userProfile = getCalorieProfile();
 
   const session = getSession(id ?? "");
 
@@ -107,7 +114,27 @@ export default function SessionDetailScreen() {
     const newSetIndex = currentSetIndex + 1;
 
     if (newSetIndex >= currentExercise.sets) {
-      // Alle Sätze für diese Übung fertig
+      // Alle Sätze für diese Übung fertig - Kalorien speichern!
+      const exerciseCalories = calculateCalories(currentExercise, userProfile);
+      const now = new Date();
+      const exerciseBurn: ExerciseCalorieBurn = {
+        id: `burn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        date: now.toISOString().split("T")[0],
+        completedAt: now.toISOString(),
+        exerciseName: currentExercise.exerciseInfo.name,
+        bodyPart: currentExercise.exerciseInfo.bodyPart,
+        calories: exerciseCalories,
+        sets: currentExercise.sets,
+        reps: currentExercise.reps,
+        weight: currentExercise.weight,
+        sessionId: session.id,
+      };
+      
+      // Speichere Übungs-Kalorien asynchron
+      saveExerciseBurn(exerciseBurn).catch((error) => {
+        console.error("Fehler beim Speichern der Übungs-Kalorien:", error);
+      });
+
       const nextExerciseIndex = currentExerciseIndex + 1;
 
       if (nextExerciseIndex >= session.exercises.length) {
@@ -145,6 +172,7 @@ export default function SessionDetailScreen() {
     currentSetIndex,
     completedSets,
     handleFinishWorkout,
+    userProfile,
   ]);
 
   const handleSkipRest = useCallback(() => {

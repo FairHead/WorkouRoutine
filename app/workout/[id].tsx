@@ -1,7 +1,17 @@
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useSessionStore } from "@/hooks/use-session-store";
+import { useUserStore } from "@/hooks/use-user-store";
 import type { SessionExercise } from "@/src/models";
+import { calculateCalories } from "@/src/services/calorie-calculator.service";
+import { 
+  calcWorkoutCalories, 
+  calcNetWorkoutCalories,
+  createWorkoutSession,
+  saveWorkoutSession,
+  saveExerciseBurn,
+  type ExerciseCalorieBurn,
+} from "@/src/services/calories";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -30,6 +40,8 @@ export default function WorkoutPlayerScreen() {
   const router = useRouter();
 
   const { getSession, completeWorkout, cancelWorkout } = useSessionStore();
+  const { user, getCalorieProfile } = useUserStore();
+  const userProfile = getCalorieProfile();
   const session = getSession(id ?? "");
 
   // Workout state
@@ -38,6 +50,9 @@ export default function WorkoutPlayerScreen() {
   const [workoutState, setWorkoutState] = useState<WorkoutState>("exercise");
   const [setProgress, setSetProgress] = useState<SetProgress[]>([]);
   const [isPaused, setIsPaused] = useState(false);
+  const [workoutStartTime, setWorkoutStartTime] = useState<string>(new Date().toISOString());
+  const [caloriesBurned, setCaloriesBurned] = useState<number | null>(null);
+  const [netCaloriesBurned, setNetCaloriesBurned] = useState<number | null>(null);
 
   // Timer state
   const [restTimeRemaining, setRestTimeRemaining] = useState(0);
@@ -57,6 +72,7 @@ export default function WorkoutPlayerScreen() {
   // Initialize progress
   useEffect(() => {
     if (session) {
+      setWorkoutStartTime(new Date().toISOString());
       setSetProgress(
         session.exercises.map((ex) => ({
           exerciseId: ex.id,
@@ -71,6 +87,77 @@ export default function WorkoutPlayerScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.id]);
+
+  // Calculate calories when workout is completed
+  useEffect(() => {
+    if (workoutState === "completed" && session && user) {
+      calculateWorkoutCalories();
+    }
+  }, [workoutState]);
+
+  const calculateWorkoutCalories = async () => {
+    if (!session || !user?.weightKg) return;
+
+    try {
+      const profile = await getCalorieProfile();
+      const durationMinutes = Math.round(workoutDuration / 60);
+      
+      // Use a default MET value of 5.0 for moderate strength training
+      // In a future version, we could track MET per exercise
+      const met = 5.0;
+      
+      const calories = calcWorkoutCalories(
+        user.weightKg,
+        durationMinutes,
+        met
+      );
+      
+      setCaloriesBurned(calories);
+      
+      // Calculate net calories if profile exists
+      if (profile && user.age && user.heightCm && user.gender) {
+        const netCalories = calcNetWorkoutCalories(
+          {
+            sex: user.gender === "male" ? "male" : "female",
+            ageYears: user.age,
+            heightCm: user.heightCm,
+            weightKg: user.weightKg,
+          },
+          durationMinutes,
+          calories
+        );
+        setNetCaloriesBurned(netCalories);
+      }
+
+      // Save workout session
+      const workoutSession = createWorkoutSession(
+        {
+          id: `workout_${Date.now()}`,
+          date: new Date().toISOString().split("T")[0],
+          startTime: workoutStartTime,
+          endTime: new Date().toISOString(),
+          durationMinutes,
+          source: "timer",
+        },
+        profile || {
+          sex: user.gender === "male" ? "male" : "female",
+          ageYears: user.age || 30,
+          heightCm: user.heightCm || 170,
+          weightKg: user.weightKg,
+          activityLevel: "moderate",
+          activityFactor: 1.55,
+          bmrKcalDay: 0,
+          tdeeNoWorkoutKcalDay: 0,
+        },
+        met,
+        profile !== null
+      );
+
+      await saveWorkoutSession(workoutSession);
+    } catch (error) {
+      console.error("Error calculating workout calories:", error);
+    }
+  };
 
   // Workout duration timer
   useEffect(() => {
@@ -172,7 +259,27 @@ export default function WorkoutPlayerScreen() {
     const newSetIndex = currentSetIndex + 1;
 
     if (newSetIndex >= currentExercise.sets) {
-      // All sets for this exercise complete
+      // All sets for this exercise complete - Kalorien speichern!
+      const exerciseCalories = calculateCalories(currentExercise, userProfile);
+      const now = new Date();
+      const exerciseBurn: ExerciseCalorieBurn = {
+        id: `burn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        date: now.toISOString().split("T")[0],
+        completedAt: now.toISOString(),
+        exerciseName: currentExercise.exerciseInfo.name,
+        bodyPart: currentExercise.exerciseInfo.bodyPart,
+        calories: exerciseCalories,
+        sets: currentExercise.sets,
+        reps: currentExercise.reps,
+        weight: currentExercise.weight,
+        sessionId: session.id,
+      };
+      
+      // Speichere Übungs-Kalorien asynchron
+      saveExerciseBurn(exerciseBurn).catch((error) => {
+        console.error("Fehler beim Speichern der Übungs-Kalorien:", error);
+      });
+
       const nextExerciseIndex = currentExerciseIndex + 1;
 
       if (nextExerciseIndex >= session.exercises.length) {
@@ -208,7 +315,7 @@ export default function WorkoutPlayerScreen() {
       setRestTimeRemaining(restTime);
       setWorkoutState("rest");
     }
-  }, [session, currentExercise, currentSetIndex, currentExerciseIndex]);
+  }, [session, currentExercise, currentSetIndex, currentExerciseIndex, userProfile]);
 
   // Effect to handle timer completion
   useEffect(() => {
@@ -382,6 +489,29 @@ export default function WorkoutPlayerScreen() {
                 </Text>
               </View>
             </View>
+            
+            {/* Calorie Information */}
+            {caloriesBurned !== null && (
+              <View style={styles.calorieSection}>
+                <View style={styles.calorieDivider} />
+                <View style={styles.calorieRow}>
+                  <Ionicons name="flame" size={28} color="#ff6b6b" />
+                  <View style={styles.calorieInfo}>
+                    <Text style={[styles.calorieValue, { color: colors.text }]}>
+                      {Math.round(caloriesBurned)} kcal
+                    </Text>
+                    <Text style={[styles.calorieLabel, { color: colors.textSecondary }]}>
+                      Verbrannt
+                    </Text>
+                    {netCaloriesBurned !== null && netCaloriesBurned > 0 && (
+                      <Text style={[styles.calorieNet, { color: colors.textSecondary }]}>
+                        ({Math.round(netCaloriesBurned)} kcal netto)
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
 
           <Pressable
@@ -1092,5 +1222,38 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontFamily: Fonts.semiBold,
+  },
+  calorieSection: {
+    marginTop: 16,
+  },
+  calorieDivider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    marginBottom: 16,
+  },
+  calorieRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  calorieInfo: {
+    alignItems: "center",
+  },
+  calorieValue: {
+    fontSize: 24,
+    fontFamily: Fonts.bold,
+  },
+  calorieLabel: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 4,
+  },
+  calorieNet: {
+    fontSize: 11,
+    fontFamily: Fonts.regular,
+    marginTop: 2,
   },
 });

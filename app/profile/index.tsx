@@ -2,6 +2,7 @@
  * Profil-Seite
  * 
  * Zeigt Benutzerprofil und ermöglicht Bearbeitung.
+ * Integriert mit Firebase Auth für Logout.
  */
 
 import React, { useState, useEffect } from "react";
@@ -14,14 +15,23 @@ import {
   ScrollView,
   Alert,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useUserStore } from "@/hooks/use-user-store";
+import * as Haptics from "expo-haptics";
+import { useUserStore } from "@/src/stores/user.store";
+import { logout } from "@/src/services/auth.service";
+import { ProfileImagePicker } from "@/components/profile-image-picker";
 import { Colors } from "@/constants/theme";
+import {
+  createCalorieProfile,
+  saveCalorieProfile,
+  type ActivityLevel,
+} from "@/src/services/calories";
 
 export default function ProfileScreen() {
-  const { user, updateUser, clearUser, settings, updateSettings } = useUserStore();
+  const { user, updateUser, clearUser, settings, updateSettings, isAuthenticated } = useUserStore();
   
   // Editing states
   const [isEditing, setIsEditing] = useState(false);
@@ -37,6 +47,7 @@ export default function ProfileScreen() {
   });
   
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Sync editData when user changes
   useEffect(() => {
@@ -54,39 +65,110 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
-  const handleSave = () => {
+  /**
+   * Mappt UserStore ActivityLevel auf CalorieService ActivityLevel
+   */
+  const mapActivityLevel = (
+    level: "sedentary" | "light" | "moderate" | "active" | "very_active" | undefined
+  ): ActivityLevel => {
+    switch (level) {
+      case "sedentary": return "sedentary";
+      case "light": return "light";
+      case "moderate": return "moderate";
+      case "active": return "very_active";
+      case "very_active": return "extra_active";
+      default: return "light";
+    }
+  };
+
+  const handleSave = async () => {
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    
+    const weightNum = editData.weight ? parseFloat(editData.weight) : undefined;
+    const heightNum = editData.height ? parseFloat(editData.height) : undefined;
+    const ageNum = editData.age ? parseInt(editData.age, 10) : undefined;
+    
+    // 1. UserStore aktualisieren
     updateUser({
       displayName: editData.displayName.trim() || "Benutzer",
       email: editData.email.trim() || undefined,
-      weightKg: editData.weight ? parseFloat(editData.weight) : undefined,
-      heightCm: editData.height ? parseFloat(editData.height) : undefined,
-      age: editData.age ? parseInt(editData.age, 10) : undefined,
+      weightKg: weightNum,
+      heightCm: heightNum,
+      age: ageNum,
       gender: editData.gender,
       activityLevel: editData.activityLevel,
       fitnessGoal: editData.fitnessGoal,
     });
+    
+    // 2. CalorieProfile updaten wenn alle Daten vorhanden
+    if (
+      weightNum && 
+      heightNum && 
+      ageNum && 
+      editData.gender && 
+      editData.gender !== "other" && 
+      editData.activityLevel
+    ) {
+      try {
+        const calorieProfile = createCalorieProfile({
+          sex: editData.gender as "male" | "female",
+          ageYears: ageNum,
+          heightCm: heightNum,
+          weightKg: weightNum,
+          activityLevel: mapActivityLevel(editData.activityLevel),
+        });
+        await saveCalorieProfile(calorieProfile);
+        console.log("✅ CalorieProfile aktualisiert:", {
+          bmr: Math.round(calorieProfile.bmrKcalDay),
+          tdee: Math.round(calorieProfile.tdeeNoWorkoutKcalDay),
+        });
+      } catch (error) {
+        console.error("Fehler beim Aktualisieren des CalorieProfile:", error);
+      }
+    }
+    
     setIsEditing(false);
   };
 
-  const handleLogout = () => {
-    clearUser();
-    router.replace("/onboarding");
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    
+    try {
+      // Firebase Auth Logout
+      const result = await logout();
+      
+      if (result.success) {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Lokale Daten löschen
+        clearUser();
+        // Navigation zu Auth
+        router.replace("/auth");
+      } else {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert("Fehler", result.error || "Abmeldung fehlgeschlagen.");
+      }
+    } catch (error) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("Fehler", "Ein unerwarteter Fehler ist aufgetreten.");
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
+    }
+  };
+
+  const handleAvatarChange = (url: string) => {
+    updateUser({ avatarUrl: url });
   };
 
   const renderProfileHeader = () => (
     <View style={styles.profileHeader}>
-      <View style={styles.avatarContainer}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {(user?.displayName || "B")[0].toUpperCase()}
-          </Text>
-        </View>
-        {isEditing && (
-          <TouchableOpacity style={styles.avatarEditButton}>
-            <Ionicons name="camera" size={16} color="#fff" />
-          </TouchableOpacity>
-        )}
-      </View>
+      <ProfileImagePicker
+        imageUrl={user?.avatarUrl}
+        displayName={user?.displayName}
+        onImageSelected={handleAvatarChange}
+        isEditing={isEditing}
+        size={100}
+      />
       
       {isEditing ? (
         <TextInput
@@ -314,27 +396,33 @@ export default function ProfileScreen() {
       visible={showLogoutModal}
       transparent
       animationType="fade"
-      onRequestClose={() => setShowLogoutModal(false)}
+      onRequestClose={() => !isLoggingOut && setShowLogoutModal(false)}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
+          <Ionicons name="log-out-outline" size={48} color="#ff6b6b" />
           <Text style={styles.modalTitle}>Abmelden?</Text>
           <Text style={styles.modalText}>
-            Alle lokalen Daten werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+            Du wirst von deinem Konto abgemeldet. Deine Daten bleiben in der Cloud gespeichert.
           </Text>
           <View style={styles.modalButtons}>
             <TouchableOpacity
               style={styles.modalCancelButton}
               onPress={() => setShowLogoutModal(false)}
+              disabled={isLoggingOut}
             >
               <Text style={styles.modalCancelText}>Abbrechen</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.modalConfirmButton}
+              style={[styles.modalConfirmButton, isLoggingOut && { opacity: 0.7 }]}
               onPress={handleLogout}
+              disabled={isLoggingOut}
             >
-              <Text style={styles.modalConfirmText}>Abmelden</Text>
+              {isLoggingOut ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.modalConfirmText}>Abmelden</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>

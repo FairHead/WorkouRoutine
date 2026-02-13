@@ -277,7 +277,7 @@ export function AIChatButton() {
         style={[
           styles.floatingButton,
           {
-            bottom: insets.bottom + 80,
+            bottom: 70,
             transform: [{ scale: scaleAnim }],
           },
         ]}
@@ -455,7 +455,9 @@ export function AIChatButton() {
 const styles = StyleSheet.create({
   floatingButton: {
     position: "absolute",
-    right: 16,
+    left: 16,
+    width: 56,
+    height: 56,
     zIndex: 1000,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
